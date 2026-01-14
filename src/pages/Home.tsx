@@ -26,7 +26,6 @@ import {
   Activity,
   Play,
   Eye,
-  Plus,
 } from 'lucide-react';
 import { format, isToday, isTomorrow, isPast, differenceInDays } from 'date-fns';
 import { th } from 'date-fns/locale';
