@@ -645,8 +645,7 @@ export default function Task() {
                         {isManager ? 'จัดการและติดตามงานของทีม' : 'งานที่ได้รับมอบหมาย'}
                     </p>
                 </div>
-
-                <div className="flex items-center gap-2">
+                {/* <div className="flex items-center gap-2">
                     <Button
                         variant="outline"
                         size="icon"
@@ -662,6 +661,25 @@ export default function Task() {
                         <Plus className="h-4 w-4 mr-2" />
                         เพิ่มงานใหม่
                     </Button>
+                </div> */}
+                <div className="flex items-center gap-2">
+                    <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => refetch()}
+                        disabled={loading}
+                    >
+                        <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                    </Button>
+                    {isManager && (
+                        <Button
+                            className="bg-purple-600 hover:bg-purple-700"
+                            onClick={() => setIsCreateDialogOpen(true)}
+                        >
+                            <Plus className="h-4 w-4 mr-2" />
+                            เพิ่มงานใหม่
+                        </Button>
+                    )}
                 </div>
             </div>
 
@@ -1011,7 +1029,7 @@ export default function Task() {
                     positions={positions}
                     currentUser={{
                         id: currentUser.id,
-                        role: currentUser.role === 'manager' ? 'employee' : currentUser.role as 'admin' | 'manager' | 'employee',
+                        role: currentUser.role === 'manager' ? 'admin' : currentUser.role as 'admin' | 'manager',
                     }}
                     onSubmit={handleTaskCreate}
                 />

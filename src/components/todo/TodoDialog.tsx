@@ -227,7 +227,7 @@ export function TodoDialog({ open, onOpenChange, editTodo, onSuccess }: TodoDial
               >
                 ยกเลิก
               </Button>
-              <Button type="submit" disabled={isSubmitting}>
+              <Button type="submit" className='bg-purple-600 hover:bg-purple-700' disabled={isSubmitting}>
                 {isSubmitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                 {isEdit ? 'บันทึก' : 'เพิ่มงาน'}
               </Button>
