@@ -414,7 +414,7 @@
 //   }
 // };
 
-import type { TaskListResponse, TaskDetailResponse, CreateTaskRequest, UpdateTaskRequest, Task, User, TaskClinic, TaskAssignee, Comment, TaskStatus } from '@/types/task';
+import type { TaskListResponse, TaskDetailResponse, CreateTaskRequest, UpdateTaskRequest, Task, User, Comment, TaskStatus } from '@/types/task';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/synergy/api';
 

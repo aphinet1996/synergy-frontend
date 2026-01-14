@@ -41,7 +41,6 @@ import {
   ExternalLink,
   RefreshCw,
   Building2,
-  MapPin,
   Calendar,
 } from 'lucide-react';
 import { useClinicStore } from '@/stores/clinicStore';
@@ -50,8 +49,10 @@ import { ClinicDialog } from '@/components/clinic/ClinicDialog';
 export default function ClinicManagement() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingClinic, setEditingClinic] = useState<any>(null);
   const [deleteClinicId, setDeleteClinicId] = useState<string | null>(null);
+  // TODO: Implement edit functionality with ClinicDialog
+  const [editingClinic, setEditingClinic] = useState<any>(null);
+  void editingClinic; // Suppress unused variable warning until edit feature is implemented
 
   const { clinics, loading, fetchClinics } = useClinicStore();
 

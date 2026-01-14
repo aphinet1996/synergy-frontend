@@ -1,5 +1,5 @@
-import { useEffect, useState, useCallback } from 'react';
-import { Input } from '@/components/ui/input';
+import { useEffect, useState } from 'react';
+// import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
   Select,
@@ -23,8 +23,8 @@ import { TodoItem } from './TodoItem';
 import { TodoDialog } from './TodoDialog';
 import { useTodoStore } from '@/stores/todoStore';
 import { useClinicStore } from '@/stores/clinicStore';
-import type { Todo, TodoStatus, TodoPriority, TodoListParams } from '@/types/todo';
-import { debounce } from 'lodash';
+import type { Todo, TodoListParams } from '@/types/todo';
+// import { debounce } from 'lodash';
 
 const ITEMS_PER_PAGE = 20;
 

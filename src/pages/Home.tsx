@@ -1,15 +1,10 @@
-// src/pages/Home.tsx
-// Dashboard แยกตาม Role: Employee, Manager, Admin
-
 import React, { useEffect, useMemo } from 'react';
 import { Link } from 'react-router';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { useTaskStore } from '@/stores/taskStore';
 import { useUserStore } from '@/stores/userStore';
 import type { Task, TaskStatus, User, Process } from '@/types/task';
@@ -24,7 +19,6 @@ import {
   ArrowRight,
   Calendar,
   Briefcase,
-  Target,
   ListTodo,
   UserCheck,
   Settings,
@@ -125,16 +119,16 @@ function getStatusLabel(status: TaskStatus) {
 }
 
 // Get status icon
-function getStatusIcon(status: TaskStatus): React.ReactNode {
-  const icons: Record<TaskStatus, React.ReactNode> = {
-    pending: <Clock className="h-4 w-4" />,
-    process: <Play className="h-4 w-4" />,
-    review: <Eye className="h-4 w-4" />,
-    done: <CheckCircle2 className="h-4 w-4" />,
-    delete: <AlertCircle className="h-4 w-4" />,
-  };
-  return icons[status] || <Clock className="h-4 w-4" />;
-}
+// function getStatusIcon(status: TaskStatus): React.ReactNode {
+//   const icons: Record<TaskStatus, React.ReactNode> = {
+//     pending: <Clock className="h-4 w-4" />,
+//     process: <Play className="h-4 w-4" />,
+//     review: <Eye className="h-4 w-4" />,
+//     done: <CheckCircle2 className="h-4 w-4" />,
+//     delete: <AlertCircle className="h-4 w-4" />,
+//   };
+//   return icons[status] || <Clock className="h-4 w-4" />;
+// }
 
 // Format due date
 function formatDueDate(date: Date) {
@@ -434,8 +428,6 @@ function EmployeeDashboard({
 // ============================================
 function ManagerDashboard({ 
   tasks, 
-  users,
-  clinics,
   currentUser,
   loading 
 }: { 

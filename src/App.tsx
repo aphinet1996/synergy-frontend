@@ -1,15 +1,3 @@
-// import { AppRoutes } from './routes';
-
-// function App() {
-//   return (
-//     <div className="App">
-//       <AppRoutes />
-//     </div>
-//   );
-// }
-
-// export default App;
-
 import { AppRoutes } from './routes';
 import { Toaster } from '@/components/ui/sonner';
 

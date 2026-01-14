@@ -11,8 +11,8 @@ interface TaskColumnProps {
   users: Array<{ id: string; name: string; avatar?: string }>;
   onTaskClick: (task: Task) => void;
 }
-
-export function TaskColumn({ columnId, title, tasks, users, onTaskClick }: TaskColumnProps) {
+// users
+export function TaskColumn({ columnId, title, tasks, onTaskClick }: TaskColumnProps) {
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {
       pending: 'bg-gray-100 text-gray-700',

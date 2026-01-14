@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useCallback } from 'react';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ExcalidrawBoard } from './ExcalidrawBoard';
@@ -20,7 +20,7 @@ export function BoardModal({
     initialData,
     onSave,
 }: BoardModalProps) {
-    const excalidrawRef = useRef<{ saveBeforeClose: () => Promise<void> } | null>(null);
+    // const excalidrawRef = useRef<{ saveBeforeClose: () => Promise<void> } | null>(null);
 
     // Handle escape key
     useEffect(() => {

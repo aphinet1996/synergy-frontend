@@ -31,7 +31,7 @@ import {
 } from '@/components/ui/popover';
 import { Check, ChevronsUpDown, AlertCircle, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { Position, CreateTaskForm, Task, TaskStatus, User, ViewMode, CreateTaskRequest } from '@/types/task';
+import type { CreateTaskForm, Task, TaskStatus, User, ViewMode, CreateTaskRequest } from '@/types/task';
 import { Plus, LayoutGrid, Users, Building2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';

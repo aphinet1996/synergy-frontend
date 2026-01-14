@@ -142,7 +142,9 @@ export function useTasksByStatus(status: TaskStatus) {
  */
 export function useTasksByAssignee(assigneeId: string) {
     const tasks = useTaskStore((state) =>
-        state.tasks.filter((task) => task.assigneeId === assigneeId)
+        state.tasks.filter((task) =>
+            task.assignee?.some((a) => a.id === assigneeId)
+        )
     );
     return tasks;
 }
@@ -152,7 +154,7 @@ export function useTasksByAssignee(assigneeId: string) {
  */
 export function useTasksByClinic(clinicId: string) {
     const tasks = useTaskStore((state) =>
-        state.tasks.filter((task) => task.clinicId.id === clinicId)
+        state.tasks.filter((task) => task.clinic.id === clinicId)
     );
     return tasks;
 }

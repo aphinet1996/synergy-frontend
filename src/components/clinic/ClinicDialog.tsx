@@ -1779,7 +1779,7 @@ import { cn } from '@/lib/utils';
 import type { Clinic, CreateClinicRequest, UpdateClinicRequest } from '@/types/clinic';
 import type { UserSummary } from '@/types/user';
 import { useClinicStore } from '@/stores/clinicStore';
-import { useAuthStore } from '@/stores/authStore';
+// import { useAuthStore } from '@/stores/authStore';
 import { useProcedureStore } from '@/stores/procedureStore';
 import { userService } from '@/services/userService';
 
@@ -1848,7 +1848,7 @@ export function ClinicDialog({ open, onOpenChange, onSuccess, mode = 'create', i
     const [procedureSearch, setProcedureSearch] = useState('');
     
     const { createClinic, updateClinic } = useClinicStore();
-    const { user } = useAuthStore();
+    // const { user } = useAuthStore();
     const { activeProcedures, fetchActiveProcedures } = useProcedureStore();
 
     // Form setup

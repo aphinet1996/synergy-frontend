@@ -3,15 +3,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 import {
   Accordion,
   AccordionContent,
@@ -24,10 +15,6 @@ import {
   Building2,
   ClipboardList,
   Settings,
-  Eye,
-  Pencil,
-  Trash2,
-  Plus,
   Save,
   RefreshCw,
   CheckCircle,

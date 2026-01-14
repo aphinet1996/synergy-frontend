@@ -7,7 +7,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { FileImage, MoreVertical, Pencil, Trash2, Users, Calendar } from 'lucide-react';
+import { MoreVertical, Pencil, Trash2, Users, Calendar } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { th } from 'date-fns/locale';
 

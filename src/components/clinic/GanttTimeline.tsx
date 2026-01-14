@@ -54,14 +54,14 @@ const convertToUIItems = (apiItems: TimelineItem[]): UITimelineItem[] => {
 };
 
 export function GanttTimeline({
-    clinicId,
+    // clinicId,
     startDate,
     endDate,
     items: apiItems,
     loading = false,
     onUpdateItem,
-    onDeleteItem,
-    onRefresh
+    // onDeleteItem,
+    // onRefresh
 }: GanttTimelineProps) {
     // ==================== STATE ====================
     const [draggedItem, setDraggedItem] = useState<string | null>(null);
@@ -354,7 +354,8 @@ export function GanttTimeline({
 
                                     {/* Timeline Grid */}
                                     <div className="flex relative" style={{ width: `${weeks.length * 96}px` }}>
-                                        {weeks.map((week, weekIndex) => {
+                                        {/* {weeks.map((week, weekIndex) => { */}
+                                        {weeks.map((week) => {
                                             const weekNum = week.weekNumber;
                                             const isInTimeline = hasTimeline && item.startWeek <= weekNum && item.endWeek >= weekNum;
                                             const isMiddleCell = hasTimeline && weekNum > item.startWeek && weekNum < item.endWeek;

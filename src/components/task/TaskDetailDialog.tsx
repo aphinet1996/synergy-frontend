@@ -35,7 +35,7 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { Calendar } from '@/components/ui/calendar';
-import type { Task, TaskStatus, TaskPriority, User, Comment } from '@/types/task';
+import type { Task, TaskStatus, TaskPriority, User } from '@/types/task';
 import {
   Calendar as CalendarIcon,
   Clock,
@@ -53,7 +53,6 @@ import {
 import { format } from 'date-fns';
 import { th } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
-import { useTaskStore } from '@/stores/taskStore';
 import { useUser } from '@/hooks/useUser';
 import { getTaskById as fetchTaskById, addCommentToProcess } from '@/services/taskService';
 
@@ -72,7 +71,7 @@ export function TaskDetailDialog({
   onOpenChange,
   users,
   onUpdate,
-  onDelete,
+  // onDelete,
 }: TaskDetailProps) {
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedTask, setEditedTask] = useState<Task | null>(null);
@@ -80,7 +79,7 @@ export function TaskDetailDialog({
   const [newComment, setNewComment] = useState('');
   const [activeProcessId, setActiveProcessId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('task');
-  const { updateTask } = useTaskStore();
+  // const { updateTask } = useTaskStore();
   const { user: currentUser } = useUser();
 
   useEffect(() => {
@@ -88,7 +87,7 @@ export function TaskDetailDialog({
       setIsEditingName(false);
       setActiveTab('task');
       setActiveProcessId(null);
-      
+
       // Always fetch full task details when dialog opens
       fetchTaskDetails(task.id);
     }
@@ -122,7 +121,7 @@ export function TaskDetailDialog({
   // Permission logic
   const isManager = currentUser?.role === 'manager' || currentUser?.role === 'admin';
   const isEmployee = currentUser?.role === 'employee' || currentUser?.role === 'developer';
-  
+
   const isCreator = (() => {
     if (!currentUser) return false;
     if (editedTask.createdBy === currentUser.id) return true;
@@ -130,7 +129,7 @@ export function TaskDetailDialog({
     if (editedTask.createdBy === currentUserFullName) return true;
     return false;
   })();
-  
+
   const canEdit = (() => {
     if (!currentUser) return false;
     if (currentUser.role === 'admin') return true;
@@ -156,7 +155,7 @@ export function TaskDetailDialog({
       }
       return userIdOrObj;
     }
-    
+
     if (typeof userIdOrObj === 'object' && userIdOrObj !== null && 'id' in userIdOrObj) {
       // Handle object with firstname/lastname
       if ('firstname' in userIdOrObj && 'lastname' in userIdOrObj) {
@@ -180,7 +179,7 @@ export function TaskDetailDialog({
         return user.name || user.username || 'ไม่ระบุ';
       }
     }
-    
+
     return 'ไม่ระบุ';
   };
 
@@ -210,37 +209,37 @@ export function TaskDetailDialog({
     return labels[status] || status;
   };
 
-  const getPriorityLabel = (priority: TaskPriority) => {
-    const labels = {
-      low: 'ต่ำ',
-      medium: 'ปานกลาง',
-      high: 'สูง',
-      urgent: 'ด่วนมาก',
-    };
-    return labels[priority];
-  };
+  // const getPriorityLabel = (priority: TaskPriority) => {
+  //   const labels = {
+  //     low: 'ต่ำ',
+  //     medium: 'ปานกลาง',
+  //     high: 'สูง',
+  //     urgent: 'ด่วนมาก',
+  //   };
+  //   return labels[priority];
+  // };
 
   // Handlers
   const handleUpdateField = async (field: keyof Task, value: any) => {
     if (!editedTask || !canEdit) return;
-    
+
     setEditedTask(prev => prev ? { ...prev, [field]: value } : null);
     onUpdate(editedTask.id, { [field]: value });
   };
 
-  const handleProcessToggle = async (processId: string, completed: boolean) => {
-    if (!editedTask || !currentUser) return;
+  // const handleProcessToggle = async (processId: string, completed: boolean) => {
+  //   if (!editedTask || !currentUser) return;
 
-    const updatedProcesses = editedTask.process.map(p =>
-      p.id === processId ? { ...p, status: completed ? 'done' : 'pending' } : p
-    );
+  //   const updatedProcesses = editedTask.process.map(p =>
+  //     p.id === processId ? { ...p, status: completed ? 'done' : 'pending' } : p
+  //   );
 
-    await handleUpdateField('process', updatedProcesses);
-  };
+  //   await handleUpdateField('process', updatedProcesses);
+  // };
 
   const handleAddComment = async (processId: string) => {
     if (!newComment.trim() || !currentUser || !editedTask) return;
-    
+
     try {
       const response = await addCommentToProcess(
         editedTask.id,
@@ -248,7 +247,7 @@ export function TaskDetailDialog({
         newComment.trim(),
         currentUser.id
       );
-      
+
       if (response.success) {
         // สร้าง comment object ใหม่สำหรับ update local state
         const newCommentObj = {
@@ -261,7 +260,7 @@ export function TaskDetailDialog({
           },
           date: new Date(),
         };
-        
+
         // Update local state
         const updatedProcesses = editedTask.process.map(p => {
           if (p.id === processId) {
@@ -272,12 +271,12 @@ export function TaskDetailDialog({
           }
           return p;
         });
-        
+
         setEditedTask({
           ...editedTask,
           process: updatedProcesses,
         });
-        
+
         setNewComment('');
         setActiveProcessId(null);
       } else {
@@ -298,18 +297,18 @@ export function TaskDetailDialog({
   // Get all unique assignees
   const getAllAssignees = (): string[] => {
     const assigneeSet = new Set<string>();
-    
+
     if (editedTask.assignee && editedTask.assignee.length > 0) {
       editedTask.assignee.forEach((a: any) => {
         const name = `${a.firstname || ''} ${a.lastname || ''}`.trim() || a.nickname || a.id;
         if (name) assigneeSet.add(name);
       });
     }
-    
+
     if ((editedTask as any).assigneeNames && (editedTask as any).assigneeNames.length > 0) {
       (editedTask as any).assigneeNames.forEach((name: string) => assigneeSet.add(name));
     }
-    
+
     if (assigneeSet.size === 0) {
       editedTask.process?.forEach(p => {
         p.assignee?.forEach(a => {
@@ -317,7 +316,7 @@ export function TaskDetailDialog({
             assigneeSet.add(a);
           } else if (a && typeof a === 'object' && 'id' in a) {
             const user = a as User;
-            const name = user.firstname && user.lastname 
+            const name = user.firstname && user.lastname
               ? `${user.firstname} ${user.lastname}`
               : user.name || user.id;
             assigneeSet.add(name);
@@ -325,12 +324,12 @@ export function TaskDetailDialog({
         });
       });
     }
-    
+
     return Array.from(assigneeSet);
   };
 
   const allAssignees = getAllAssignees();
-  const totalComments = editedTask.process?.reduce((acc, p) => acc + (p.comments?.length || 0), 0) || 0;
+  // const totalComments = editedTask.process?.reduce((acc, p) => acc + (p.comments?.length || 0), 0) || 0;
 
   // Workload sections
   const workloadSections = [
@@ -351,7 +350,7 @@ export function TaskDetailDialog({
           <SheetDescription className="sr-only">
             ดูและแก้ไขรายละเอียดงาน สถานะ และขั้นตอนการทำงาน
           </SheetDescription>
-          
+
           <div className="space-y-3">
             {/* Permission Notice */}
             {/* {!canEdit && (
@@ -630,7 +629,7 @@ export function TaskDetailDialog({
                     {workloadSections.map((section) => {
                       const workloadData = editedTask.workload?.[section.key as keyof typeof editedTask.workload] || [];
                       const total = workloadData.reduce((sum: number, item: any) => sum + (item.amount || 0), 0);
-                      
+
                       return (
                         <div key={section.key} className="p-3 border rounded-lg">
                           <div className="flex items-center gap-2 mb-2">
@@ -783,7 +782,7 @@ export function TaskDetailDialog({
                                 <Label className="text-xs text-muted-foreground">
                                   Comments ({processComments.length})
                                 </Label>
-                                
+
                                 {/* Comment List */}
                                 {processComments.length > 0 && (
                                   <div className="space-y-3 max-h-[200px] overflow-y-auto">

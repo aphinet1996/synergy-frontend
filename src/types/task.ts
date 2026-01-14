@@ -1,167 +1,3 @@
-// export type TaskStatus = 'todo' | 'in-progress' | 'review' | 'done' | 'pending';
-// export type TaskPriority = 'low' | 'medium' | 'high' | 'urgent';
-// export type ViewMode = 'status' | 'assignee' | 'clinic';
-
-// export interface User {
-//   id: string;
-//   name: string;
-//   role: 'admin' | 'manager' | 'employee';
-//   avatar?: string;
-//   username?: string;
-//   firstname?: string;
-//   lastname?: string;
-//   position?: string;
-// }
-
-// export interface Comment {
-//   id: string;
-//   text: string;
-//   user: Pick<User, 'id' | 'firstname' | 'lastname'>;
-//   date: Date;
-// }
-
-// export interface Process {
-//   id: string;
-//   name: string;
-//   assignee: string[] | User[];
-//   comments: Comment[];
-//   attachments: any[];
-//   status: 'pending' | 'completed';
-// }
-
-// export interface WorkloadSection {
-//   section: string;
-//   amount: number;
-// }
-
-// export interface Workload {
-//   video: WorkloadSection[];
-//   website: WorkloadSection[];
-//   image: WorkloadSection[];
-//   shooting: WorkloadSection[];
-// }
-
-// export interface Clinic {
-//   id: string;
-//   name: {
-//     en: string;
-//     th: string;
-//   };
-//   clinicLevel?: string;
-// }
-
-// export interface Task {
-//   id: string;
-//   name: string;
-//   description?: string;
-//   attachments: any[];
-//   priority: TaskPriority;
-//   status: TaskStatus;
-//   tag: string[];
-//   startDate: Date;
-//   dueDate: Date;
-//   clinicId: Clinic;
-//   process: Process[];
-//   workload?: Workload;
-//   createdBy: string;
-//   updatedBy: string;
-//   createdAt?: Date;
-//   updatedAt?: Date;
-//   assigneeId?: string;
-//   assigneeNames?: string[]; // เพิ่มสำหรับเก็บชื่อ assignees จาก backend
-//   clinicName?: string;
-//   commentAmount?: number;
-//   attachmentsAmount?: number;
-// }
-
-// export interface Position {
-//   id: string;
-//   name: string;
-//   members: User[];
-// }
-
-// export interface CreateTaskForm {
-//   name: string;
-//   description: string;
-//   priority: TaskPriority;
-//   startDate: Date;
-//   dueDate: Date;
-//   clinicId: string;
-//   process: Array<{
-//     name: string;
-//     assignee: string[];
-//     attachments: any[];
-//     status: 'pending' | 'completed';
-//   }>;
-//   workload: Workload;
-//   createdBy: string;
-// }
-
-// export interface CreateTaskRequest {
-//   name: string;
-//   description: string;
-//   attachments: any[];
-//   priority: TaskPriority;
-//   status: TaskStatus;
-//   tag: string[];
-//   startDate: string; // "MM/DD/YYYY"
-//   dueDate: string; // "MM/DD/YYYY"
-//   clinicId: string;
-//   process: Array<{
-//     name: string;
-//     assignee: string[];
-//     attachments: any[];
-//     status: 'pending' | 'completed';
-//   }>;
-//   workload: Workload;
-//   createdBy: string;
-// }
-
-// export interface UpdateTaskRequest {
-//   name?: string;
-//   description?: string;
-//   attachments?: any[];
-//   priority?: TaskPriority;
-//   status?: TaskStatus;
-//   tag?: string[];
-//   startDate?: string;
-//   dueDate?: string;
-//   clinicId?: string;
-//   process?: Array<{
-//     id?: string;
-//     name: string;
-//     assignee: string[];
-//     attachments: any[];
-//     status: 'pending' | 'completed';
-//   }>;
-//   workload?: Workload;
-//   updatedBy?: string;
-// }
-
-// // Response types
-// export interface TaskListResponse {
-//   status: 'success';
-//   results: number;
-//   pagination: {
-//     page: number;
-//     limit: number;
-//     total: number;
-//     totalPages: number;
-//   };
-//   data: {
-//     tasks: Task[];
-//   };
-// }
-
-// export interface TaskDetailResponse {
-//   status: 'success';
-//   data: {
-//     task: Task;
-//   };
-// }
-
-// ✅ อัพเดทให้ตรงกับ backend response ใหม่
-
 export type TaskStatus = 'pending' | 'process' | 'review' | 'done' | 'delete';
 export type TaskPriority = 'low' | 'medium' | 'high' | 'urgent';
 export type ViewMode = 'status' | 'assignee' | 'clinic';
@@ -215,7 +51,7 @@ export interface Workload {
 
 // ✅ Clinic DTO ตรงกับ backend response
 export interface TaskClinic {
-  id: string;  // ObjectId
+  id: string;
   name: {
     en: string;
     th: string;
@@ -250,14 +86,14 @@ export interface Task {
   tag: string[];
   startDate: Date;
   dueDate: Date;
-  clinic: TaskClinic;           // ✅ เปลี่ยนจาก clinicId เป็น clinic
+  clinic: TaskClinic;
   process: Process[];
   workload?: Workload;
   createdBy: string;
   updatedBy?: string;
   createdAt?: Date;
   updatedAt?: Date;
-  assignee?: TaskAssignee[];    // ✅ เพิ่ม assignee array
+  assignee?: TaskAssignee[];
   commentAmount?: number;
   attachmentsAmount?: number;
 }
