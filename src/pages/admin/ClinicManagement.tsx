@@ -80,7 +80,7 @@ export default function ClinicManagement() {
     if (deleteClinicId) {
       // Call delete API
       // await clinicService.deleteClinic(deleteClinicId);
-      console.log('Delete clinic:', deleteClinicId);
+      // console.log('Delete clinic:', deleteClinicId);
       setDeleteClinicId(null);
       fetchClinics({ limit: 100 });
     }

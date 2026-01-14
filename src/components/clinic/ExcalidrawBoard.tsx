@@ -107,7 +107,7 @@ export function ExcalidrawBoard({ boardId, initialData, onSave }: ExcalidrawBoar
     useEffect(() => {
         // ตรวจสอบว่ามี boardId และ token ก่อน connect
         if (!boardId || !token) {
-            console.log('Missing boardId or token, skipping socket connection');
+            // console.log('Missing boardId or token, skipping socket connection');
             return;
         }
 
@@ -128,7 +128,7 @@ export function ExcalidrawBoard({ boardId, initialData, onSave }: ExcalidrawBoar
 
         socket.on('connect', () => {
             if (!isActive) return;
-            console.log('Socket connected:', socket.id);
+            // console.log('Socket connected:', socket.id);
             setIsConnected(true);
             
             // Join board room with initial elements for cache sync
@@ -219,26 +219,26 @@ export function ExcalidrawBoard({ boardId, initialData, onSave }: ExcalidrawBoar
         // CRITICAL: Prevent saving empty data when we had elements before
         // This prevents React Strict Mode remount from wiping data
         if (activeElements.length === 0 && initialElementCountRef.current > 0) {
-            console.log('Skipping save: would overwrite existing data with empty');
+            // console.log('Skipping save: would overwrite existing data with empty');
             return;
         }
 
         // Prevent concurrent saves
         if (isSavingRef.current) {
-            console.log('Save already in progress, skipping...');
+            // console.log('Save already in progress, skipping...');
             return;
         }
 
         // Throttle check (skip if closing)
         const now = Date.now();
         if (!isClosing && now - lastSaveTimeRef.current < THROTTLE_MS) {
-            console.log('Throttled, skipping save');
+            // console.log('Throttled, skipping save');
             return;
         }
 
         // Skip if elements unchanged
         if (elementsEqual(activeElements, lastSavedElementsRef.current)) {
-            console.log('No changes to save');
+            // console.log('No changes to save');
             return;
         }
 
@@ -255,7 +255,7 @@ export function ExcalidrawBoard({ boardId, initialData, onSave }: ExcalidrawBoar
                 files,
             });
 
-            console.log(`Saving board: ${boardId}, elements: ${activeElements.length}`);
+            // console.log(`Saving board: ${boardId}, elements: ${activeElements.length}`);
             await onSave(data);
 
             // Broadcast to other users
@@ -329,13 +329,13 @@ export function ExcalidrawBoard({ boardId, initialData, onSave }: ExcalidrawBoar
                 
                 // CRITICAL: Don't save empty data if we had elements before
                 if (activeElements.length === 0 && initialElementCountRef.current > 0) {
-                    console.log('Cleanup: Skipping save - would overwrite with empty data');
+                    // console.log('Cleanup: Skipping save - would overwrite with empty data');
                     return;
                 }
                 
                 // Only save if there are changes
                 if (!elementsEqual(activeElements, lastSavedElementsRef.current) && activeElements.length > 0) {
-                    console.log(`Cleanup: Saving ${activeElements.length} elements`);
+                    // console.log(`Cleanup: Saving ${activeElements.length} elements`);
                     const appState = api.getAppState();
                     const files = api.getFiles?.() || {};
                     const data = JSON.stringify({

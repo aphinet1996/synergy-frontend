@@ -193,7 +193,7 @@ export function BoardTab({ clinicId }: BoardTabProps) {
             throw new Error('Board ID not found');
         }
 
-        console.log('Saving board:', boardId, 'elements:', elements.length);
+        // console.log('Saving board:', boardId, 'elements:', elements.length);
 
         const response = await boardService.saveBoardElements(clinicId, boardId, {
             elements,
@@ -206,7 +206,7 @@ export function BoardTab({ clinicId }: BoardTabProps) {
             throw new Error(response.error || 'Failed to save board');
         }
 
-        console.log('Board saved successfully');
+        // console.log('Board saved successfully');
     };
 
     const handleEditBoard = async (board: BoardListItem) => {

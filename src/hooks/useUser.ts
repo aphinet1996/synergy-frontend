@@ -14,7 +14,7 @@ export function useUser() {
     // ถ้าไม่มี token (logout แล้ว) → clear user
     if (!currentToken) {
       if (user) {
-        console.log('[useUser] No token, clearing user');
+        // console.log('[useUser] No token, clearing user');
         clearUser();
       }
       prevTokenRef.current = undefined;
@@ -24,7 +24,7 @@ export function useUser() {
 
     // ถ้า token เปลี่ยน (login ใหม่) → fetch user ใหม่
     if (currentToken !== prevTokenRef.current && !isFetchingRef.current) {
-      console.log('[useUser] Token changed, fetching new user');
+      // console.log('[useUser] Token changed, fetching new user');
       isFetchingRef.current = true;
       prevTokenRef.current = currentToken;
       

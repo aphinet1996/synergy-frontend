@@ -123,7 +123,7 @@ export function useTaskPageImproved() {
         
         // ✅ Reset เมื่อ token เปลี่ยน (user ใหม่ login) หรือ logout
         if (currentToken !== lastTokenRef.current) {
-            console.log('[useTaskPageImproved] Token changed, resetting fetch state');
+            // console.log('[useTaskPageImproved] Token changed, resetting fetch state');
             hasFetchedRef.current = false;
             isFetchingRef.current = false;
             lastTokenRef.current = currentToken;
@@ -131,7 +131,7 @@ export function useTaskPageImproved() {
 
         // ไม่มี token = ไม่ fetch (user logged out)
         if (!currentToken) {
-            console.log('[useTaskPageImproved] No token, skipping fetch');
+            // console.log('[useTaskPageImproved] No token, skipping fetch');
             return;
         }
 
@@ -142,15 +142,15 @@ export function useTaskPageImproved() {
 
         // เริ่ม fetch
         isFetchingRef.current = true;
-        console.log('[useTaskPageImproved] Starting fetchAll...');
+        // console.log('[useTaskPageImproved] Starting fetchAll...');
         
         const fetchData = async () => {
             try {
                 await store.fetchAll();
                 hasFetchedRef.current = true;
-                console.log('[useTaskPageImproved] fetchAll completed');
+                // console.log('[useTaskPageImproved] fetchAll completed');
             } catch (error) {
-                console.error('[useTaskPageImproved] fetchAll error:', error);
+                // console.error('[useTaskPageImproved] fetchAll error:', error);
             } finally {
                 isFetchingRef.current = false;
             }
@@ -174,7 +174,7 @@ export function useTaskPageImproved() {
         updateTaskStatus: store.updateTaskStatus,
         updateProcessStatus: store.updateProcessStatus,  // ✅ เพิ่มบรรทัดนี้
         refetch: async () => {
-            console.log('[useTaskPageImproved] Manual refetch triggered');
+            // console.log('[useTaskPageImproved] Manual refetch triggered');
             hasFetchedRef.current = false;
             await store.fetchAll();
             hasFetchedRef.current = true;

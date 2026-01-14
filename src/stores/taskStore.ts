@@ -332,7 +332,7 @@ export const useTaskStore = create<TaskState>()(
         const response = await taskService.getTasks(page, limit);
 
         if (response.success && response.data) {
-          console.log('taskStore: Tasks fetched successfully:', response.data.tasks);
+          // console.log('taskStore: Tasks fetched successfully:', response.data.tasks);
           set({
             tasks: response.data.tasks,
             pagination: response.data.pagination,

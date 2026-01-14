@@ -580,7 +580,7 @@ export default function Task() {
             createdBy: currentUser.id,
         };
 
-        console.log('Creating task with data:', createRequest);
+        // console.log('Creating task with data:', createRequest);
         await createTask(createRequest);
         setIsCreateDialogOpen(false);
     };
@@ -660,7 +660,7 @@ export default function Task() {
                         onClick={() => setIsCreateDialogOpen(true)}
                     >
                         <Plus className="h-4 w-4 mr-2" />
-                        สร้างงานใหม่
+                        เพิ่มงานใหม่
                     </Button>
                 </div>
             </div>

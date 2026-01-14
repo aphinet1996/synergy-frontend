@@ -112,7 +112,9 @@ export function TodoList() {
       </div>
       <h3 className="text-lg font-medium text-gray-900 mb-1">ไม่มีงาน</h3>
       <p className="text-gray-500 mb-4">เริ่มต้นด้วยการเพิ่มงานใหม่ของคุณ</p>
-      <Button onClick={() => setIsDialogOpen(true)}>
+      <Button
+        className="bg-purple-600 hover:bg-purple-700"
+        onClick={() => setIsDialogOpen(true)}>
         <Plus className="h-4 w-4 mr-2" />
         เพิ่มงานใหม่
       </Button>
@@ -179,7 +181,7 @@ export function TodoList() {
         </Button>
 
         {/* Add Button */}
-        <Button onClick={() => setIsDialogOpen(true)} className="ml-auto">
+        <Button onClick={() => setIsDialogOpen(true)} className="ml-auto bg-purple-600 hover:bg-purple-700">
           <Plus className="h-4 w-4 mr-2" />
           เพิ่มงานใหม่
         </Button>

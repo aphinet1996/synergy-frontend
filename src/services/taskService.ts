@@ -448,7 +448,7 @@ interface ApiResponse<T> {
 
 export const getTasks = async (page: number = 1, limit: number = 10): Promise<ApiResponse<{ tasks: Task[]; pagination: TaskListResponse['pagination'] }>> => {
   const token = getAccessToken();
-  console.log('Fetching tasks with token:', token ? 'exists' : 'missing');
+  // console.log('Fetching tasks with token:', token ? 'exists' : 'missing');
 
   const response = await fetch(`${API_BASE}/task/?page=${page}&limit=${limit}`, {
     method: 'GET',
@@ -464,7 +464,7 @@ export const getTasks = async (page: number = 1, limit: number = 10): Promise<Ap
   }
 
   const data: TaskListResponse = await response.json();
-  console.log('Raw tasks response:', data);
+  // console.log('Raw tasks response:', data);
 
   if (data.status !== 'success') {
     return { success: false, error: 'Failed to fetch tasks' };
@@ -522,11 +522,11 @@ export const getTasks = async (page: number = 1, limit: number = 10): Promise<Ap
     attachmentsAmount: task.attachmentsAmount || 0,
   }));
 
-  console.log('Mapped tasks:', tasks.map(t => ({ 
-    name: t.name, 
-    clinicId: t.clinic.id,
-    clinicName: t.clinic.name.th 
-  })));
+  // console.log('Mapped tasks:', tasks.map(t => ({ 
+  //   name: t.name, 
+  //   clinicId: t.clinic.id,
+  //   clinicName: t.clinic.name.th 
+  // })));
   
   return { success: true, data: { tasks, pagination: data.pagination } };
 };
@@ -546,7 +546,7 @@ export const getTaskById = async (id: string): Promise<ApiResponse<{ task: Task 
   }
 
   const data: TaskDetailResponse = await response.json();
-  console.log('getTaskById raw response:', data);
+  // console.log('getTaskById raw response:', data);
   
   if (data.status !== 'success') {
     return { success: false, error: 'Failed to fetch task' };
@@ -600,7 +600,7 @@ export const getTaskById = async (id: string): Promise<ApiResponse<{ task: Task 
     updatedAt: taskData.updatedAt ? new Date(taskData.updatedAt) : undefined,
   };
 
-  console.log('getTaskById mapped task:', task);
+  // console.log('getTaskById mapped task:', task);
   return { success: true, data: { task } };
 };
 
@@ -622,7 +622,7 @@ export const createTask = async (payload: CreateTaskRequest): Promise<ApiRespons
     })),
   };
 
-  console.log('Creating task with body:', body);
+  // console.log('Creating task with body:', body);
 
   const response = await fetch(`${API_BASE}/task/`, {
     method: 'POST',
@@ -861,7 +861,7 @@ export const getClinics = async (): Promise<ApiResponse<{ clinics: any[] }>> => 
       clinics = data.map(mapClinic);
     }
 
-    console.log('Mapped clinics:', clinics);
+    // console.log('Mapped clinics:', clinics);
     return { success: true, data: { clinics } };
   } catch (error) {
     console.warn('Error fetching clinics:', error);

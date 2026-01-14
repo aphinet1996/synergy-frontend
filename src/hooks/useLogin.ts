@@ -34,7 +34,7 @@ export const useLogin = () => {
 
   useEffect(() => {
     if (userFromUserStore) {  // ← watch userStore.user (รอ full user)
-      navigate('/task');
+      navigate('/home');
     }
   }, [userFromUserStore, navigate]);
 

@@ -513,16 +513,16 @@ function ManagerDashboard({
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" asChild>
+          {/* <Button variant="outline" asChild>
             <Link to="/task">
               <ClipboardList className="h-4 w-4 mr-2" />
               จัดการงาน
             </Link>
-          </Button>
-          <Button asChild>
+          </Button> */}
+          <Button className='bg-purple-600 hover:bg-purple-700' asChild>
             <Link to="/task">
-              <Plus className="h-4 w-4 mr-2" />
-              สร้างงานใหม่
+              <ClipboardList className="h-4 w-4 mr-2" />
+              จัดการงาน
             </Link>
           </Button>
         </div>
