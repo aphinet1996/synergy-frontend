@@ -563,7 +563,7 @@ export default function Task() {
         const createRequest: CreateTaskRequest = {
             name: data.name,
             description: data.description || '',
-            attachments: [],
+            attachments: data.attachments || [],  // ✅ ใช้ attachments จาก form data
             priority: data.priority,
             status: 'pending',  // ✅ ใช้ 'pending'
             tag: [],

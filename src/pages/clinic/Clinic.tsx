@@ -23,6 +23,7 @@ import { ClinicDialog } from '@/components/clinic/ClinicDialog';
 import { Search, ChevronDown, Plus, Folder, RefreshCw } from 'lucide-react';
 import { useClinicStore } from '@/stores/clinicStore';
 import { useUserStore } from '@/stores/userStore';
+import { useTaskStore } from '@/stores/taskStore';
 import type { SortBy, ClinicListParams } from '@/types/clinic';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -50,13 +51,26 @@ export default function Clinics() {
     clearError
   } = useClinicStore();
 
-  // User store - get user role
-  const { user } = useUserStore();
+  // User store - get user role (fallback)
+  const { user: userStoreUser } = useUserStore();
+  
+  // Task store - get currentUser (มี fetchCurrentUser)
+  const { currentUser: taskStoreUser, fetchCurrentUser } = useTaskStore();
+
+  // ✅ ใช้ currentUser จาก taskStore ก่อน, fallback ไป userStore
+  const currentUser = taskStoreUser || userStoreUser;
+
+  // ✅ Fetch current user เมื่อ component mount
+  useEffect(() => {
+    if (!currentUser) {
+      fetchCurrentUser();
+    }
+  }, [currentUser, fetchCurrentUser]);
 
   // Check if user can add clinic (admin or manager only)
   const canAddClinic = useMemo(() => {
-    return user?.role === 'admin' || user?.role === 'manager';
-  }, [user?.role]);
+    return currentUser?.role === 'admin' || currentUser?.role === 'manager';
+  }, [currentUser?.role]);
 
   const sortOptions = {
     newest: 'คลินิกที่สร้างใหม่ (ค่าเริ่มต้น)',

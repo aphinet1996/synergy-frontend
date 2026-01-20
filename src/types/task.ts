@@ -34,7 +34,7 @@ export interface Process {
   assignee: string[] | User[] | ProcessAssignee[];
   comments: Comment[];
   attachments: any[];
-  status: string;  // เปลี่ยนเป็น string เพื่อรองรับค่าจาก backend
+  status: string; 
 }
 
 export interface WorkloadSection {
@@ -68,7 +68,7 @@ export interface TaskAssignee {
 
 // ✅ Clinic สำหรับ dropdown (จาก GET /clinic/)
 export interface Clinic {
-  id: string;  // ObjectId
+  id: string;
   name: {
     en: string;
     th: string;
@@ -107,6 +107,7 @@ export interface Position {
 export interface CreateTaskForm {
   name: string;
   description: string;
+  attachments?: any[];
   priority: TaskPriority;
   startDate: Date;
   dueDate: Date;
