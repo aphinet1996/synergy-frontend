@@ -76,7 +76,7 @@ const schema = z.object({
     nameEn: z.string().min(1, 'กรุณากรอกชื่อคลินิก (English)'),
     status: z.enum(['active', 'inactive', 'pending'], { message: 'กรุณาเลือกสถานะ' }),
     contractType: z.enum(['yearly', 'monthly', 'project'], { message: 'กรุณาเลือกประเภทสัญญา' }),
-    clinicLevel: z.enum(['premium', 'standard', 'basic'], { message: 'กรุณาเลือกระดับคลินิก' }),
+    clinicLevel: z.enum(['easy', 'soso', 'hellonearth'], { message: 'กรุณาเลือกระดับคลินิก' }),
     startDate: z.date({ message: 'กรุณาเลือกวันที่เริ่มสัญญา' }),
     endDate: z.date({ message: 'กรุณาเลือกวันที่สิ้นสุดสัญญา' }),
     note: z.string().optional(),
@@ -138,7 +138,7 @@ export function ClinicDialog({ open, onOpenChange, onSuccess, mode = 'create', i
             nameEn: '',
             status: 'active',
             contractType: 'yearly',
-            clinicLevel: 'standard',
+            clinicLevel: 'easy',
             startDate: new Date(),
             endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
             note: '',
@@ -231,7 +231,7 @@ export function ClinicDialog({ open, onOpenChange, onSuccess, mode = 'create', i
                 nameEn: '',
                 status: 'active',
                 contractType: 'yearly',
-                clinicLevel: 'standard',
+                clinicLevel: 'easy',
                 startDate: new Date(),
                 endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
                 note: '',
@@ -680,14 +680,14 @@ export function ClinicDialog({ open, onOpenChange, onSuccess, mode = 'create', i
 
                                 <div className="space-y-2">
                                     <Label>ระดับคลินิก *</Label>
-                                    <Select value={clinicLevel} onValueChange={(value: 'premium' | 'standard' | 'basic') => setValue('clinicLevel', value)}>
+                                    <Select value={clinicLevel} onValueChange={(value: 'easy' | 'soso' | 'hellonearth') => setValue('clinicLevel', value)}>
                                         <SelectTrigger>
                                             <SelectValue placeholder="เลือกระดับ" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="premium">Premium</SelectItem>
-                                            <SelectItem value="standard">Standard</SelectItem>
-                                            <SelectItem value="basic">Basic</SelectItem>
+                                            <SelectItem value="easy">Easy</SelectItem>
+                                            <SelectItem value="soso">So so</SelectItem>
+                                            <SelectItem value="hellonearth">Hell on earth</SelectItem>
                                         </SelectContent>
                                     </Select>
                                     <FormError error={errors.clinicLevel} />

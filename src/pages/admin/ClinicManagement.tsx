@@ -121,9 +121,9 @@ export default function ClinicManagement() {
               </div>
               <div>
                 <p className="text-2xl font-bold">
-                  {clinics.filter((c) => c.clinicLevel === 'premium').length}
+                  {clinics.filter((c) => c.clinicLevel === 'easy').length}
                 </p>
-                <p className="text-sm text-gray-500">Premium</p>
+                <p className="text-sm text-gray-500">Easy</p>
               </div>
             </div>
           </CardContent>
@@ -136,9 +136,9 @@ export default function ClinicManagement() {
               </div>
               <div>
                 <p className="text-2xl font-bold">
-                  {clinics.filter((c) => c.clinicLevel === 'standard').length}
+                  {clinics.filter((c) => c.clinicLevel === 'soso').length}
                 </p>
-                <p className="text-sm text-gray-500">Standard</p>
+                <p className="text-sm text-gray-500">So so</p>
               </div>
             </div>
           </CardContent>
@@ -151,9 +151,9 @@ export default function ClinicManagement() {
               </div>
               <div>
                 <p className="text-2xl font-bold">
-                  {clinics.filter((c) => c.clinicLevel === 'basic').length}
+                  {clinics.filter((c) => c.clinicLevel === 'hellonearth').length}
                 </p>
-                <p className="text-sm text-gray-500">Basic</p>
+                <p className="text-sm text-gray-500">Hell on earth</p>
               </div>
             </div>
           </CardContent>
@@ -245,9 +245,9 @@ export default function ClinicManagement() {
                       <Badge
                         variant="outline"
                         className={
-                          clinic.clinicLevel === 'premium'
+                          clinic.clinicLevel === 'easy'
                             ? 'bg-yellow-100 text-yellow-700'
-                            : clinic.clinicLevel === 'standard'
+                            : clinic.clinicLevel === 'soso'
                             ? 'bg-blue-100 text-blue-700'
                             : 'bg-gray-100 text-gray-700'
                         }
