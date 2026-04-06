@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { Navigate, useLocation } from 'react-router';
-import { useUserStore } from '@/stores/userStore';
+import { useAuthStore } from '@/stores/authStore';
+import { useUser } from '@/hooks/useUser';
 import { Loader2 } from 'lucide-react';
 
 interface AdminGuardProps {
@@ -9,8 +10,18 @@ interface AdminGuardProps {
 }
 
 export function AdminGuard({ children, allowedRoles = ['admin'] }: AdminGuardProps) {
-  const { user, loading } = useUserStore();
   const location = useLocation();
+  const tokens = useAuthStore((state) => state.tokens);
+
+  const { user, loading, isAuthenticated } = useUser();
+
+  if (tokens?.accessToken && !user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
+      </div>
+    );
+  }
 
   // Show loading while checking auth
   if (loading) {
@@ -22,12 +33,12 @@ export function AdminGuard({ children, allowedRoles = ['admin'] }: AdminGuardPro
   }
 
   // Redirect to login if not authenticated
-  if (!user) {
+  if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
   // Check if user has allowed role
-  const hasPermission = allowedRoles.includes(user.role as any);
+  const hasPermission = allowedRoles.includes(user!.role as any);
 
   if (!hasPermission) {
     return (

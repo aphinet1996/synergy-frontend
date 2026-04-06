@@ -9,17 +9,21 @@ interface StepIndicatorProps {
 
 export function StepIndicator({ currentStep, totalSteps, steps }: StepIndicatorProps) {
   return (
-    <div className="w-full mb-1">
+    <div className="w-full">
       {/* Progress Bar Background */}
       <div className="relative">
         {/* Background Line */}
-        <div className="absolute top-5 left-0 right-0 h-1 bg-gray-200 -z-10" />
-        
+        <div
+          className="absolute top-4 h-0.5 bg-gray-200 -z-10"
+          style={{ left: `${100 / totalSteps / 2}%`, right: `${100 / totalSteps / 2}%` }}
+        />
+
         {/* Active Progress Line */}
         <div
-          className="absolute top-5 left-0 h-1 bg-gradient-to-r from-purple-500 to-purple-600 -z-10 transition-all duration-500 ease-in-out"
+          className="absolute top-4 h-0.5 bg-gradient-to-r from-purple-500 to-purple-600 -z-10 transition-all duration-500 ease-in-out"
           style={{
-            width: `${((currentStep - 1) / (totalSteps - 1)) * 100}%`,
+            left: `${100 / totalSteps / 2}%`,
+            width: `${((currentStep - 1) / (totalSteps - 1)) * (100 - 100 / totalSteps)}%`,
           }}
         />
 
@@ -34,11 +38,7 @@ export function StepIndicator({ currentStep, totalSteps, steps }: StepIndicatorP
             return (
               <div
                 key={stepNumber}
-                className={cn(
-                  'flex flex-col items-center transition-all duration-300',
-                  index === 0 && 'items-start',
-                  index === steps.length - 1 && 'items-end'
-                )}
+                className="flex flex-col items-center transition-all duration-300"
                 style={{ width: `${100 / totalSteps}%` }}
               >
                 {/* Step Circle */}
@@ -47,22 +47,22 @@ export function StepIndicator({ currentStep, totalSteps, steps }: StepIndicatorP
                   {isCurrent && (
                     <div className="absolute inset-0 rounded-full bg-purple-600 opacity-20 animate-ping" />
                   )}
-                  
+
                   {/* Main Circle */}
                   <div
                     className={cn(
-                      'relative w-10 h-10 rounded-full flex items-center justify-center font-semibold text-sm transition-all duration-300 shadow-sm',
-                      isCompleted && 'bg-gradient-to-br from-purple-500 to-purple-600 text-white shadow-lg shadow-purple-500/30 scale-100',
-                      isCurrent && 'bg-gradient-to-br from-purple-600 to-purple-700 text-white ring-4 ring-purple-100 shadow-xl shadow-purple-600/40 scale-110',
+                      'relative w-8 h-8 rounded-full flex items-center justify-center font-semibold text-xs transition-all duration-300 shadow-sm',
+                      isCompleted && 'bg-gradient-to-br from-purple-500 to-purple-600 text-white shadow-md shadow-purple-500/30 scale-100',
+                      isCurrent && 'bg-gradient-to-br from-purple-600 to-purple-700 text-white ring-2 ring-purple-100 shadow-lg shadow-purple-600/40 scale-105',
                       isUpcoming && 'bg-white border-2 border-gray-300 text-gray-400'
                     )}
                   >
                     {isCompleted ? (
-                      <Check className="h-5 w-5 animate-in zoom-in duration-200" />
+                      <Check className="h-4 w-4 animate-in zoom-in duration-200" />
                     ) : (
                       <span className={cn(
                         'transition-all duration-200',
-                        isCurrent && 'scale-110'
+                        isCurrent && 'scale-105'
                       )}>
                         {stepNumber}
                       </span>
@@ -71,15 +71,15 @@ export function StepIndicator({ currentStep, totalSteps, steps }: StepIndicatorP
 
                   {/* Glow Effect for Current Step */}
                   {isCurrent && (
-                    <div className="absolute inset-0 rounded-full bg-purple-600 blur-md opacity-30 -z-10" />
+                    <div className="absolute inset-0 rounded-full bg-purple-600 blur-sm opacity-30 -z-10" />
                   )}
                 </div>
 
                 {/* Step Label */}
-                <div className="mt-3 text-center max-w-[120px]">
+                <div className="mt-2 text-center max-w-[100px]">
                   <div
                     className={cn(
-                      'text-xs font-medium transition-all duration-200',
+                      'text-[11px] font-medium transition-all duration-200',
                       isCompleted && 'text-purple-600',
                       isCurrent && 'text-purple-700 font-semibold',
                       isUpcoming && 'text-gray-400'
@@ -87,20 +87,20 @@ export function StepIndicator({ currentStep, totalSteps, steps }: StepIndicatorP
                   >
                     {step}
                   </div>
-                  
+
                   {/* Step Status */}
-                  <div className="mt-1">
+                  {/* <div className="mt-0.5">
                     {isCompleted && (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-purple-50 text-purple-600 animate-in fade-in duration-200">
+                      <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-medium bg-purple-50 text-purple-600 animate-in fade-in duration-200">
                         เสร็จสิ้น
                       </span>
                     )}
                     {isCurrent && (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-purple-100 text-purple-700 animate-pulse">
+                      <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-medium bg-purple-100 text-purple-700 animate-pulse">
                         กำลังดำเนินการ
                       </span>
                     )}
-                  </div>
+                  </div> */}
                 </div>
               </div>
             );
