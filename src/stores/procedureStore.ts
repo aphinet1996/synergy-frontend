@@ -1,5 +1,3 @@
-// src/stores/procedureStore.ts
-
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import type { Procedure, ProcedureListParams, CreateProcedureRequest, UpdateProcedureRequest } from '@/types/procedure';
