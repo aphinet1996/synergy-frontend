@@ -3,43 +3,46 @@ import { useUserStore } from '@/stores/userStore';
 import { useAuthStore } from '@/stores/authStore';
 
 export function useUser() {
-  const { user, loading, error, fetchUser, logout: clearUser } = useUserStore();
-  const tokens = useAuthStore((state) => state.tokens);
+  const user = useUserStore((s) => s.user);
+  const loading = useUserStore((s) => s.loading);
+  const error = useUserStore((s) => s.error);
+  const fetchUser = useUserStore((s) => s.fetchUser);
+  const clearUser = useUserStore((s) => s.logout);
+
+  const accessToken = useAuthStore((s) => s.tokens?.accessToken);
   const prevTokenRef = useRef<string | undefined>(undefined);
-  const isFetchingRef = useRef(false);
 
   useEffect(() => {
-    const currentToken = tokens?.accessToken;
-
-    // ถ้าไม่มี token (logout แล้ว) → clear user
-    if (!currentToken) {
-      if (user) {
-        // console.log('[useUser] No token, clearing user');
+    // กรณี logout หรือไม่มี token
+    if (!accessToken) {
+      if (prevTokenRef.current) {
         clearUser();
       }
       prevTokenRef.current = undefined;
-      isFetchingRef.current = false;
       return;
     }
 
-    // ถ้า token เปลี่ยน (login ใหม่) → fetch user ใหม่
-    if (currentToken !== prevTokenRef.current && !isFetchingRef.current) {
-      // console.log('[useUser] Token changed, fetching new user');
-      isFetchingRef.current = true;
-      prevTokenRef.current = currentToken;
-      
-      fetchUser().finally(() => {
-        isFetchingRef.current = false;
-      });
+    // ป้องกันการ fetch ซ้ำถ้ามีข้อมูล user อยู่แล้ว และไม่ได้ loading
+    if (user !== null && !loading) {
+      prevTokenRef.current = accessToken;
+      return;
     }
-  }, [tokens?.accessToken, user, fetchUser, clearUser]);
+
+    // มี token ใหม่ หรือ token เปลี่ยน → fetch
+    if (accessToken !== prevTokenRef.current) {
+      prevTokenRef.current = accessToken;
+      fetchUser();
+    }
+
+  }, [accessToken, user, loading, fetchUser, clearUser]);
+  // ^ ใส่ deps ให้ครบเพื่อความปลอดภัย (Zustand selector เป็น stable)
 
   return {
     user,
     loading,
     error,
     refetch: fetchUser,
-    isAuthenticated: !!user && !!tokens?.accessToken,
+    isAuthenticated: !!user && !!accessToken,
   };
 }
 
@@ -51,7 +54,7 @@ export function useUserSummary() {
     id: user.id,
     name: `${user.firstname} ${user.lastname}`,
     role: user.role,
-    position: user.position,
+    position: user.position?.name || '',
     isActive: user.isActive,
   };
 }

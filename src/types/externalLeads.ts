@@ -117,7 +117,7 @@ export interface UpdateLeadDTO {
   note?: string;
 }
 
-// ==================== Clinic User Types ====================
+// Clinic User Types
 
 export interface ClinicUser {
   _id: string;
@@ -154,7 +154,7 @@ export interface UpdateClinicUserDTO {
   expired?: string;
 }
 
-// ==================== Stats Types ====================
+// Stats Types
 
 export interface LeadOverviewStats {
   total: number;
@@ -208,7 +208,7 @@ export interface StatsParams {
   status?: string;
 }
 
-// ==================== Activity Types ====================
+// Activity Types
 
 export type ActivityAction = 'create' | 'update' | 'delete' | 'view' | 'login' | 'logout' | 'export' | 'import';
 export type ActivityResource = 'lead' | 'user' | 'setting' | 'clinic' | 'report' | 'api_key' | 'patient' | 'patient_deposit' | 'patient_balance';
@@ -267,7 +267,7 @@ export interface ActivityStats {
   topUsers: Array<{ userId: string; userName: string; count: number }>;
 }
 
-// ==================== Options Types ====================
+// Options Types
 
 // จาก GET /options/clinics
 export interface ClinicOption {
@@ -343,7 +343,7 @@ export interface FormSchema {
   submitMethod: string;
 }
 
-// ==================== Patient Types ====================
+// Patient Types
 
 export interface Patient {
   _id: string;
@@ -440,7 +440,7 @@ export interface AdjustBalanceDTO {
   createdBy?: string;
 }
 
-// ==================== API Response Types ====================
+// API Response Types
 
 export interface Pagination {
   page: number;

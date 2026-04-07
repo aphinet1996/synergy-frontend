@@ -129,16 +129,18 @@ export const useTaskStore = create<TaskState>()(
             const positionMap = new Map<string, any>();
 
             allUsers.forEach((user: User) => {
-              if (user.position) {
-                if (!positionMap.has(user.position)) {
-                  positionMap.set(user.position, {
-                    id: user.position.toLowerCase().replace(/\s+/g, '-'),
-                    name: user.position,
+              if (user.position && typeof user.position === 'object' && user.position.name) {
+                const posName = user.position.name;
+                const posId = user.position.id || posName.toLowerCase().replace(/\s+/g, '-');
+                
+                if (!positionMap.has(posId)) {
+                  positionMap.set(posId, {
+                    id: posId,
+                    name: posName,
                     members: []
                   });
                 }
-                // เพิ่ม user เข้าไปใน members ของ position
-                positionMap.get(user.position).members.push(user);
+                positionMap.get(posId).members.push(user);
               }
             });
 

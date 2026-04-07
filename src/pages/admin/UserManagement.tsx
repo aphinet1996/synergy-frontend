@@ -56,7 +56,6 @@ const roleConfig: Record<UserRole, { label: string; color: string }> = {
   admin: { label: 'Admin', color: 'bg-red-100 text-red-700' },
   manager: { label: 'Manager', color: 'bg-purple-100 text-purple-700' },
   employee: { label: 'Employee', color: 'bg-blue-100 text-blue-700' },
-  developer: { label: 'Developer', color: 'bg-gray-100 text-gray-700' },
 };
 
 interface UserFilters {
@@ -80,7 +79,7 @@ export default function UserManagement() {
   // Fetch users
   const fetchUsers = async () => {
     setLoading(true);
-    const response = await userService.getAllUsers({ limit: 100 });
+    const response = await userService.getAllUserSummaries({ limit: 100 });
     if (response.success && response.data) {
       setUsers(response.data.users);
     }

@@ -39,7 +39,7 @@ import { toast } from 'sonner';
 // Import stores and hooks
 import { useTaskPageImproved } from '@/hooks/useTaskImproved';
 
-// ✅ แก้ไข STATUS_COLUMNS ให้ตรงกับ backend
+// แก้ไข STATUS_COLUMNS ให้ตรงกับ backend
 const STATUS_COLUMNS = [
     { id: 'pending', title: 'รอดำเนินการ' },
     { id: 'process', title: 'กำลังดำเนินการ' },
@@ -129,11 +129,15 @@ function SearchableClinicSelect({
     );
 }
 
-// Horizontal scroll hook
+// Horizontal scroll hook - เฉพาะ Desktop เท่านั้น
 function useHorizontalScroll(ref: React.RefObject<HTMLDivElement | null>) {
     useEffect(() => {
         const element = ref.current;
         if (!element) return;
+
+        // ตรวจสอบว่าเป็น touch device หรือไม่
+        const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+        if (isTouchDevice) return; // ไม่ใช้ horizontal scroll บน touch device
 
         const handleWheel = (e: WheelEvent) => {
             if (e.deltaY !== 0) {
@@ -188,7 +192,7 @@ export default function Task() {
 
     const isManager = currentUser?.role === 'manager' || currentUser?.role === 'admin';
 
-    // ✅ Helper: หา process ที่ user ถูก assign
+    // Helper: หา process ที่ user ถูก assign
     const findUserProcess = (task: Task, userId: string, userName: string) => {
         if (!task.process || task.process.length === 0) return null;
 
@@ -222,7 +226,7 @@ export default function Task() {
         return null;
     };
 
-    // ✅ Helper: คำนวณสถานะที่จะใช้จัดกลุ่ม task ตาม role
+    // Helper: คำนวณสถานะที่จะใช้จัดกลุ่ม task ตาม role
     const getDisplayStatus = (task: Task): TaskStatus => {
         // Manager/Admin: ใช้ task.status
         if (isManager) {
@@ -257,10 +261,10 @@ export default function Task() {
         }
     }, [isManager, viewMode]);
 
-    // ✅ Transform clinics data for UI - ใช้ ObjectId ตรงๆ
+    // Transform clinics data for UI - ใช้ ObjectId ตรงๆ
     const clinicsForUI: Array<{ id: string; name: string }> = allClinics.length > 0
         ? allClinics.map(clinic => ({
-            id: clinic.id,  // ✅ ใช้ ObjectId ตรงๆ
+            id: clinic.id,  // ใช้ ObjectId ตรงๆ
             name: typeof clinic.name === 'string'
                 ? clinic.name
                 : (clinic.name?.th || clinic.name?.en || 'ไม่ระบุชื่อ'),
@@ -269,7 +273,7 @@ export default function Task() {
             // ถ้าไม่มี clinics จาก API ให้ดึงจาก tasks
             const clinicMap = new Map<string, { id: string; name: string }>();
             tasks.forEach(task => {
-                // ✅ ใช้ task.clinic แทน task.clinicId
+                // ใช้ task.clinic แทน task.clinicId
                 if (task.clinic?.id && !clinicMap.has(task.clinic.id)) {
                     clinicMap.set(task.clinic.id, {
                         id: task.clinic.id,
@@ -284,7 +288,7 @@ export default function Task() {
     useEffect(() => {
         if (viewMode === 'clinic') {
             clinicsForUI.forEach(clinic => {
-                // ✅ ใช้ task.clinic แทน task.clinicId
+                // ใช้ task.clinic แทน task.clinicId
                 const matchingTasks = tasks.filter(t => t.clinic?.id === clinic.id);
                 console.log(`Clinic "${clinic.name}" (ID: ${clinic.id}):`, matchingTasks.length, 'tasks');
             });
@@ -299,9 +303,9 @@ export default function Task() {
             : user.name || user.username || 'ไม่ระบุชื่อ',
     }));
 
-    // ✅ Helper function to check if user is assignee - รองรับ response ใหม่
+    // Helper function to check if user is assignee - รองรับ response ใหม่
     const isUserAssignee = (task: Task, userId: string, userName: string): boolean => {
-        // ✅ Check assignee array จาก response ใหม่
+        // Check assignee array จาก response ใหม่
         if (task.assignee && task.assignee.length > 0) {
             return task.assignee.some(a =>
                 a.id === userId ||
@@ -349,162 +353,125 @@ export default function Task() {
             task.createdBy === currentUserName
         );
 
-    // Filter tasks based on view mode
-    const getFilteredTasks = () => {
-        let filtered = tasks;
+    // Filter tasks โดยใช้ getDisplayStatus สำหรับ employee
+    const filteredTasks = isManager
+        ? tasks
+        : tasks.filter((task) =>
+            isUserAssignee(task, currentUser?.id || '', currentUserName) ||
+            task.createdBy === currentUser?.id ||
+            task.createdBy === currentUserName
+        );
 
-        if (!isManager) {
-            filtered = filtered.filter((task) =>
-                isUserAssignee(task, currentUser?.id || '', currentUserName) ||
-                task.createdBy === currentUser?.id ||
-                task.createdBy === currentUserName
-            );
-        }
-
-        if (viewMode === 'assignee' && selectedAssignee !== 'all') {
-            filtered = filtered.filter((task) =>
-                isUserAssignee(task, selectedAssignee, selectedAssignee)
-            );
-        }
-
-        // ✅ ใช้ task.clinic แทน task.clinicId
-        if (viewMode === 'clinic' && selectedClinic !== 'all') {
-            filtered = filtered.filter((task) => task.clinic?.id === selectedClinic);
-        }
-
-        return filtered;
-    };
-
-    const filteredTasks = getFilteredTasks();
-
-    // Group tasks by status
-    const getTasksByStatus = (status: TaskStatus) => {
+    // ใช้ getDisplayStatus เพื่อจัดกลุ่ม tasks
+    const getTasksByStatus = (status: TaskStatus): Task[] => {
         return filteredTasks.filter((task) => getDisplayStatus(task) === status);
     };
 
-    // Group tasks by assignee
-    const getTasksByAssignee = (assigneeId: string) => {
-        const user = usersWithNames.find(u => u.id === assigneeId);
-        const userName = user ? `${user.firstname} ${user.lastname}`.trim() : assigneeId;
-        return filteredTasks.filter((task) => isUserAssignee(task, assigneeId, userName));
+    // Get tasks by assignee
+    const getTasksByAssignee = (userId: string): Task[] => {
+        if (!isManager) return [];
+        const user = usersWithNames.find(u => u.id === userId);
+        const userName = user ? user.name : '';
+        return tasks.filter((task) => isUserAssignee(task, userId, userName));
     };
 
-    // ✅ ใช้ task.clinic แทน task.clinicId
-    const getTasksByClinic = (clinicId: string) => {
-        return filteredTasks.filter((task) => task.clinic?.id === clinicId);
+    // Get tasks by clinic - ใช้ clinic.id
+    const getTasksByClinic = (clinicId: string): Task[] => {
+        return baseFilteredTasksForClinic.filter(task => task.clinic?.id === clinicId);
     };
 
-    // ✅ ใช้ task.clinic แทน task.clinicId
-    const getAvailableClinics = () => {
-        const clinicIdsWithTasks = new Set(baseFilteredTasksForClinic.map((task) => task.clinic?.id).filter(Boolean));
-        return clinicsForUI.filter((clinic) => clinicIdsWithTasks.has(clinic.id));
-    };
+    // Get available clinics (ที่มี tasks)
+    const availableClinics = clinicsForUI.filter(clinic =>
+        baseFilteredTasksForClinic.some(task => task.clinic?.id === clinic.id)
+    );
 
-    const availableClinics = getAvailableClinics();
-
-    // Clinic display logic
-    let displayClinics: typeof clinicsForUI = [];
-    let displayTotalPages = 1;
-
-    if (viewMode === 'clinic') {
-        if (selectedClinic !== 'all') {
-            const selectedClinicObj = availableClinics.find((c) => c.id === selectedClinic);
-            displayClinics = selectedClinicObj ? [selectedClinicObj] : [];
-            displayTotalPages = 1;
-        } else {
-            let sortedClinics = [...availableClinics];
-
-            if (sortBy === 'tasks') {
-                sortedClinics = sortedClinics.sort((a, b) => {
-                    // ✅ ใช้ task.clinic แทน task.clinicId
-                    const tasksA = baseFilteredTasksForClinic.filter((task) => task.clinic?.id === a.id).length;
-                    const tasksB = baseFilteredTasksForClinic.filter((task) => task.clinic?.id === b.id).length;
-                    return tasksB - tasksA;
-                });
-            } else {
-                sortedClinics = sortedClinics.sort((a, b) => a.name.localeCompare(b.name, 'th'));
-            }
-
-            displayTotalPages = Math.ceil(sortedClinics.length / clinicsPerPage);
-            const startIdx = (currentPage - 1) * clinicsPerPage;
-            displayClinics = sortedClinics.slice(startIdx, startIdx + clinicsPerPage);
+    // Sorted and paginated clinics for clinic view
+    const sortedClinics = [...availableClinics].sort((a, b) => {
+        if (sortBy === 'tasks') {
+            return getTasksByClinic(b.id).length - getTasksByClinic(a.id).length;
         }
-    }
-
-    // ✅ Transform task for UI - ใช้ task.clinic
-    const transformTaskForUI = (task: Task) => ({
-        ...task,
-        title: task.name,
-        clinicName: task.clinic?.name?.th || task.clinic?.name?.en || '',
+        return a.name.localeCompare(b.name, 'th');
     });
 
-    // Handle drag and drop
-    const handleDragEnd = async (result: DropResult) => {
-        const { destination, source, draggableId } = result;
+    // Clinic display logic
+    const displayClinics = selectedClinic === 'all'
+        ? sortedClinics.slice((currentPage - 1) * clinicsPerPage, currentPage * clinicsPerPage)
+        : sortedClinics.filter(c => c.id === selectedClinic);
 
-        if (!destination) return;
+    const displayTotalPages = Math.ceil(sortedClinics.length / clinicsPerPage);
 
-        if (destination.droppableId === source.droppableId && destination.index === source.index) {
-            return;
-        }
+    // Transform task for UI display -  FIXED: return Task พร้อม computed fields
+    const transformTaskForUI = (task: Task): Task & { displayStatus: TaskStatus; clinicName: string } => {
+        // ใช้ clinic object แทน clinicId
+        const clinicName = task.clinic?.name?.th || task.clinic?.name?.en ||
+            clinicsForUI.find(c => c.id === task.clinic?.id)?.name ||
+            'ไม่ระบุคลินิก';
 
-        const newStatus = destination.droppableId as TaskStatus;
-        const taskToUpdate = tasks.find(t => t.id === draggableId);
+        // ใช้ displayStatus สำหรับ employee
+        const displayStatus = getDisplayStatus(task);
 
-        if (!taskToUpdate) return;
-
-        try {
-            if (isManager) {
-                // ✅ Manager/Admin: อัปเดต task.status
-                await updateTaskStatus(draggableId, newStatus);
-                toast.success('อัปเดตสถานะงานสำเร็จ');
-            } else {
-                // ✅ Employee: อัปเดต process.status ของ process ที่ตัวเองถูก assign
-                const userProcess = findUserProcess(taskToUpdate, currentUser?.id || '', currentUserName);
-
-                if (userProcess) {
-                    const result = await updateProcessStatus(draggableId, userProcess.id, newStatus);
-                    if (result.success) {
-                        toast.success('อัปเดตสถานะขั้นตอนสำเร็จ');
-                    } else {
-                        toast.error(result.error || 'ไม่สามารถอัปเดตสถานะได้');
-                    }
-                } else {
-                    toast.error('คุณไม่ได้ถูก assign ในงานนี้');
-                }
-            }
-        } catch (error) {
-            console.error('Error updating status:', error);
-            toast.error('เกิดข้อผิดพลาดในการอัปเดตสถานะ');
-        }
+        return {
+            ...task, // return task เดิมทั้งหมด
+            displayStatus, // เพิ่ม computed field
+            clinicName, // เพิ่ม computed field
+        };
     };
 
-    // Handle task operations
+    // Handle task click
     const handleTaskClick = (task: Task) => {
         setSelectedTask(task);
         setIsDetailDialogOpen(true);
     };
 
-    // ✅ แก้ไข handleTaskUpdate - ใช้ clinic แทน clinicId
-    const handleTaskUpdate = async (taskId: string, updates: Partial<Task>) => {
-        const formatDateToAPI = (date: Date | string | undefined): string | undefined => {
-            if (!date) return undefined;
-            const d = typeof date === 'string' ? new Date(date) : date;
-            return d.toLocaleDateString('en-US', {
-                month: '2-digit',
-                day: '2-digit',
-                year: 'numeric',
-            });
-        };
+    // Handle drag end
+    const handleDragEnd = async (result: DropResult) => {
+        const { source, destination, draggableId } = result;
 
-        // ✅ ใช้ clinic แทน clinicId
+        if (!destination) return;
+        if (source.droppableId === destination.droppableId && source.index === destination.index) return;
+
+        const newStatus = destination.droppableId as TaskStatus;
+        const task = tasks.find(t => t.id === draggableId);
+
+        if (!task) return;
+
+        try {
+            if (isManager) {
+                // Manager: update task.status
+                await updateTaskStatus(draggableId, newStatus);
+            } else {
+                // Employee: update process.status ของตัวเอง
+                const userProcess = findUserProcess(task, currentUser?.id || '', currentUserName);
+
+                if (userProcess && userProcess.name) {
+                    await updateProcessStatus(draggableId, userProcess.name, newStatus);
+                } else {
+                    // Fallback: ถ้าไม่เจอ process ให้ update task status
+                    await updateTaskStatus(draggableId, newStatus);
+                }
+            }
+        } catch (error) {
+            console.error('Failed to update status:', error);
+            toast.error('ไม่สามารถอัพเดทสถานะได้');
+        }
+    };
+
+    // Helper function to format date for API
+    const formatDateToAPI = (date: Date | string): string => {
+        const d = typeof date === 'string' ? new Date(date) : date;
+        return format(d, 'MM/dd/yyyy');
+    };
+
+    // Handle task update
+    const handleTaskUpdate = async (taskId: string, updates: Partial<Task>) => {
+        // ใช้ clinic แทน clinicId
         const { startDate, dueDate, clinic, process, ...restUpdates } = updates;
 
         await updateTask(taskId, {
             ...restUpdates,
             ...(startDate && { startDate: formatDateToAPI(startDate) }),
             ...(dueDate && { dueDate: formatDateToAPI(dueDate) }),
-            // ✅ ส่ง clinic.id (ObjectId) ไปเป็น clinicId
+            // ส่ง clinic.id (ObjectId) ไปเป็น clinicId
             ...(clinic && { clinicId: clinic.id }),
             ...(process && {
                 process: process.map(p => ({
@@ -524,7 +491,7 @@ export default function Task() {
         setIsDetailDialogOpen(false);
     };
 
-    // ✅ handleTaskCreate - clinicId ตอนนี้คือ ObjectId แล้ว
+    // handleTaskCreate - clinicId ตอนนี้คือ ObjectId แล้ว
     const handleTaskCreate = async (data: CreateTaskForm) => {
         if (!currentUser) return;
 
@@ -550,7 +517,7 @@ export default function Task() {
             status: 'pending' as TaskStatus,
         }];
 
-        // ✅ clinicId ตอนนี้คือ ObjectId แล้ว (จาก clinicsForUI)
+        // clinicId ตอนนี้คือ ObjectId แล้ว (จาก clinicsForUI)
         const finalClinicId = data.clinicId && data.clinicId !== '' ?
             data.clinicId :
             (clinicsForUI[0]?.id || '');
@@ -563,13 +530,13 @@ export default function Task() {
         const createRequest: CreateTaskRequest = {
             name: data.name,
             description: data.description || '',
-            attachments: data.attachments || [],  // ✅ ใช้ attachments จาก form data
+            attachments: data.attachments || [],  //  ใช้ attachments จาก form data
             priority: data.priority,
-            status: 'pending',  // ✅ ใช้ 'pending'
+            status: 'pending',  //  ใช้ 'pending'
             tag: [],
             startDate: format(data.startDate, 'MM/dd/yyyy'),
             dueDate: format(data.dueDate, 'MM/dd/yyyy'),
-            clinicId: finalClinicId,  // ✅ ObjectId
+            clinicId: finalClinicId,  //  ObjectId
             process: finalProcesses,
             workload: data.workload || {
                 video: [],
@@ -588,20 +555,18 @@ export default function Task() {
     // Loading state
     if (loading && !tasks.length) {
         return (
-            <div className="space-y-6 h-full flex flex-col">
-                <div className="flex items-center justify-between flex-shrink-0">
+            <div className="space-y-6 pb-6">
+                <div className="flex items-center justify-between">
                     <div className="space-y-1">
                         <Skeleton className="h-8 w-32" />
                         <Skeleton className="h-4 w-48" />
                     </div>
                     <Skeleton className="h-10 w-40" />
                 </div>
-                <div className="flex-1 overflow-hidden">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 h-full">
-                        {[...Array(4)].map((_, i) => (
-                            <Skeleton key={i} className="h-[500px] w-full" />
-                        ))}
-                    </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {[...Array(4)].map((_, i) => (
+                        <Skeleton key={i} className="h-[400px] w-full" />
+                    ))}
                 </div>
             </div>
         );
@@ -634,7 +599,8 @@ export default function Task() {
     };
 
     return (
-        <div className="space-y-6 h-full flex flex-col">
+        // FIXED: ใช้ min-h-0 และ pb-6 แทน h-full เพื่อให้ scroll ได้บนมือถือ
+        <div className="space-y-6 pb-6">
             {/* Header */}
             <div className="flex items-center justify-between flex-shrink-0">
                 <div>
@@ -645,23 +611,6 @@ export default function Task() {
                         {isManager ? 'จัดการและติดตามงานของทีม' : 'งานที่ได้รับมอบหมาย'}
                     </p>
                 </div>
-                {/* <div className="flex items-center gap-2">
-                    <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => refetch()}
-                        disabled={loading}
-                    >
-                        <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-                    </Button>
-                    <Button
-                        className="bg-purple-600 hover:bg-purple-700"
-                        onClick={() => setIsCreateDialogOpen(true)}
-                    >
-                        <Plus className="h-4 w-4 mr-2" />
-                        เพิ่มงานใหม่
-                    </Button>
-                </div> */}
                 <div className="flex items-center gap-2">
                     <Button
                         variant="outline"
@@ -785,15 +734,15 @@ export default function Task() {
                 </div>
             </Card>
 
-            {/* Task Board */}
-            <div className="flex-1 overflow-hidden">
+            {/* Task Board - FIXED: ลบ overflow-hidden และใช้ auto height */}
+            <div className="min-h-0">
                 <DragDropContext onDragEnd={handleDragEnd}>
                     {viewMode === 'status' ? (
-                        // Status View
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 h-full">
+                        // Status View -  FIXED: ใช้ auto height บนมือถือ
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                             {STATUS_COLUMNS.map((column) => (
-                                <Card key={column.id} className="flex flex-col overflow-hidden h-[500px]">
-                                    <div className="p-4 h-full flex flex-col">
+                                <Card key={column.id} className="flex flex-col h-auto md:h-[500px]">
+                                    <div className="p-4 flex flex-col h-full">
                                         <TaskColumn
                                             columnId={column.id}
                                             title={column.title}
@@ -806,156 +755,46 @@ export default function Task() {
                             ))}
                         </div>
                     ) : viewMode === 'assignee' ? (
-                        // Assignee View
-                        <div className="flex-1 overflow-hidden">
-                            <div className="h-full flex flex-col">
-                                <div ref={assigneeScrollRef} className="flex flex-row overflow-x-auto gap-4 pb-4 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent h-[calc(100%-60px)]">
-                                    {usersWithNames.map((user) => {
-                                        const userTasks = getTasksByAssignee(user.id);
-                                        if (selectedAssignee !== 'all' && user.id !== selectedAssignee) return null;
+                        // Assignee View - FIXED: ใช้ flex-wrap บนมือถือ
+                        <div className="w-full">
+                            <div
+                                ref={assigneeScrollRef}
+                                className="flex flex-col md:flex-row md:overflow-x-auto gap-4 pb-4 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent"
+                            >
+                                {usersWithNames.map((user) => {
+                                    const userTasks = getTasksByAssignee(user.id);
+                                    if (selectedAssignee !== 'all' && user.id !== selectedAssignee) return null;
 
-                                        return (
-                                            <div key={user.id} className="flex-shrink-0 w-80 min-w-[320px]">
-                                                <Card className="flex flex-col overflow-hidden h-[500px]">
-                                                    <div className="p-4 h-full flex flex-col">
-                                                        {/* User Header */}
-                                                        <div className="flex items-center gap-3 mb-3 pb-3 border-b flex-shrink-0">
-                                                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center text-white font-semibold">
-                                                                {user.name.charAt(0)}
-                                                            </div>
-                                                            <div className="flex-1 min-w-0">
-                                                                <h3 className="font-semibold text-gray-900 truncate">{user.name}</h3>
-                                                                <p className="text-xs text-gray-500">{userTasks.length} งาน</p>
-                                                            </div>
+                                    return (
+                                        <div key={user.id} className="w-full md:flex-shrink-0 md:w-80 md:min-w-[320px]">
+                                            <Card className="flex flex-col h-auto md:h-[500px]">
+                                                <div className="p-4 flex flex-col h-full">
+                                                    {/* User Header */}
+                                                    <div className="flex items-center gap-3 mb-3 pb-3 border-b flex-shrink-0">
+                                                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center text-white font-semibold">
+                                                            {user.name.charAt(0)}
                                                         </div>
-
-                                                        {/* Tasks grouped by status */}
-                                                        <div className="flex-1 overflow-y-auto space-y-4 pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent hover:scrollbar-thumb-gray-400">
-                                                            {STATUS_COLUMNS.map((column) => {
-                                                                const statusTasks = userTasks.filter(
-                                                                    (task) => task.status === column.id
-                                                                );
-                                                                if (statusTasks.length === 0) return null;
-
-                                                                return (
-                                                                    <div key={column.id}>
-                                                                        <h4 className="text-xs font-medium text-gray-500 mb-2 sticky top-0 bg-white py-1 z-10">
-                                                                            {column.title} ({statusTasks.length})
-                                                                        </h4>
-                                                                        <div className="space-y-2">
-                                                                            {statusTasks.map((task) => (
-                                                                                <TaskCard
-                                                                                    key={task.id}
-                                                                                    task={transformTaskForUI(task)}
-                                                                                    onClick={() => handleTaskClick(task)}
-                                                                                />
-                                                                            ))}
-                                                                        </div>
-                                                                    </div>
-                                                                );
-                                                            })}
-
-                                                            {userTasks.length === 0 && (
-                                                                <div className="text-center py-8 text-gray-400 text-sm">
-                                                                    ไม่มีงาน
-                                                                </div>
-                                                            )}
+                                                        <div className="flex-1 min-w-0">
+                                                            <h3 className="font-semibold text-gray-900 truncate">{user.name}</h3>
+                                                            <p className="text-xs text-gray-500">{userTasks.length} งาน</p>
                                                         </div>
                                                     </div>
-                                                </Card>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-                        </div>
-                    ) : (
-                        // Clinic View
-                        <div className="flex-1 overflow-hidden">
-                            <div className="h-full flex flex-col">
-                                <div ref={clinicScrollRef} className="flex flex-row overflow-x-auto gap-4 pb-4 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent h-[calc(100%-60px)]">
-                                    {displayClinics.map((clinic) => {
-                                        const clinicTasks = getTasksByClinic(clinic.id);
-                                        const tasksCount = clinicTasks.length;
 
-                                        return (
-                                            <div key={clinic.id} className="flex-shrink-0 w-80 min-w-[320px]">
-                                                <Card className="flex flex-col overflow-hidden h-[500px]">
-                                                    <div className="p-4 h-full flex flex-col">
-                                                        {/* Clinic Header */}
-                                                        <div className="flex items-center justify-between mb-3 pb-3 border-b flex-shrink-0 h-20">
-                                                            <div className="flex items-center gap-3 flex-1 min-w-0">
-                                                                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center text-white font-semibold shadow-lg">
-                                                                    {clinic.name.charAt(0)}
-                                                                </div>
-                                                                <div className="flex-1 min-w-0">
-                                                                    <h3 className="font-semibold text-gray-900 truncate">{clinic.name}</h3>
-                                                                    <p className="text-xs text-gray-500">{tasksCount} งาน</p>
-                                                                </div>
-                                                            </div>
-                                                            <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getBadgeClass(tasksCount)}`}>
-                                                                {tasksCount}
-                                                            </span>
-                                                        </div>
+                                                    {/* Tasks grouped by status */}
+                                                    <div className="flex-1 md:overflow-y-auto space-y-4 pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent hover:scrollbar-thumb-gray-400">
+                                                        {STATUS_COLUMNS.map((column) => {
+                                                            const statusTasks = userTasks.filter(
+                                                                (task) => task.status === column.id
+                                                            );
+                                                            if (statusTasks.length === 0) return null;
 
-                                                        {/* Tasks Content */}
-                                                        <div className="flex-1 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent hover:scrollbar-thumb-gray-400">
-                                                            {isManager ? (
-                                                                (() => {
-                                                                    const tasksByAssignee = usersWithNames.reduce((acc, user) => {
-                                                                        const userName = `${user.firstname} ${user.lastname}`.trim();
-                                                                        const userClinicTasks = clinicTasks.filter(
-                                                                            (task) => isUserAssignee(task, user.id, userName)
-                                                                        );
-                                                                        if (userClinicTasks.length > 0) {
-                                                                            acc[user.id] = {
-                                                                                user,
-                                                                                tasks: userClinicTasks,
-                                                                            };
-                                                                        }
-                                                                        return acc;
-                                                                    }, {} as Record<string, { user: User; tasks: Task[] }>);
-
-                                                                    return Object.keys(tasksByAssignee).length === 0 ? (
-                                                                        <div className="text-center py-8 text-gray-400 text-sm">
-                                                                            ไม่มีงาน
-                                                                        </div>
-                                                                    ) : (
-                                                                        <Accordion type="multiple" className="w-full">
-                                                                            {Object.entries(tasksByAssignee).map(([userId, { user, tasks: userTasks }]) => (
-                                                                                <AccordionItem key={userId} value={userId}>
-                                                                                    <AccordionTrigger className="text-xs font-medium text-gray-700 hover:no-underline">
-                                                                                        <div className="flex items-center gap-2">
-                                                                                            <div className="w-6 h-6 rounded-full bg-purple-100 flex items-center justify-center">
-                                                                                                <span className="text-xs font-semibold text-purple-700">
-                                                                                                    {user.name.charAt(0)}
-                                                                                                </span>
-                                                                                            </div>
-                                                                                            {user.name} ({userTasks.length})
-                                                                                        </div>
-                                                                                    </AccordionTrigger>
-                                                                                    <AccordionContent className="space-y-2 mt-2">
-                                                                                        {userTasks.map((task) => (
-                                                                                            <TaskCard
-                                                                                                key={task.id}
-                                                                                                task={transformTaskForUI(task)}
-                                                                                                onClick={() => handleTaskClick(task)}
-                                                                                            />
-                                                                                        ))}
-                                                                                    </AccordionContent>
-                                                                                </AccordionItem>
-                                                                            ))}
-                                                                        </Accordion>
-                                                                    );
-                                                                })()
-                                                            ) : (
-                                                                clinicTasks.length === 0 ? (
-                                                                    <div className="text-center py-8 text-gray-400 text-sm">
-                                                                        ไม่มีงาน
-                                                                    </div>
-                                                                ) : (
+                                                            return (
+                                                                <div key={column.id}>
+                                                                    <h4 className="text-xs font-medium text-gray-500 mb-2 sticky top-0 bg-white py-1 z-10">
+                                                                        {column.title} ({statusTasks.length})
+                                                                    </h4>
                                                                     <div className="space-y-2">
-                                                                        {clinicTasks.map((task) => (
+                                                                        {statusTasks.map((task) => (
                                                                             <TaskCard
                                                                                 key={task.id}
                                                                                 task={transformTaskForUI(task)}
@@ -963,48 +802,160 @@ export default function Task() {
                                                                             />
                                                                         ))}
                                                                     </div>
-                                                                )
-                                                            )}
-                                                        </div>
+                                                                </div>
+                                                            );
+                                                        })}
+
+                                                        {userTasks.length === 0 && (
+                                                            <div className="text-center py-8 text-gray-400 text-sm">
+                                                                ไม่มีงาน
+                                                            </div>
+                                                        )}
                                                     </div>
-                                                </Card>
-                                            </div>
-                                        );
-                                    })}
-
-                                    {/* Empty State */}
-                                    {displayClinics.length === 0 && (
-                                        <div className="flex-shrink-0 w-full flex items-center justify-center h-64 text-gray-500">
-                                            <p>ไม่พบคลินิก</p>
+                                                </div>
+                                            </Card>
                                         </div>
-                                    )}
-                                </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    ) : (
+                        // Clinic View -  FIXED: ใช้ flex-wrap บนมือถือ
+                        <div className="w-full">
+                            <div
+                                ref={clinicScrollRef}
+                                className="flex flex-col md:flex-row md:overflow-x-auto gap-4 pb-4 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent"
+                            >
+                                {displayClinics.map((clinic) => {
+                                    const clinicTasks = getTasksByClinic(clinic.id);
+                                    const tasksCount = clinicTasks.length;
 
-                                {/* Pagination */}
-                                {viewMode === 'clinic' && selectedClinic === 'all' && displayTotalPages > 1 && (
-                                    <div className="flex justify-center items-center gap-2 pt-4">
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-                                            disabled={currentPage === 1}
-                                        >
-                                            ก่อนหน้า
-                                        </Button>
-                                        <span className="text-sm text-gray-600">
-                                            หน้า {currentPage} จาก {displayTotalPages}
-                                        </span>
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => setCurrentPage((p) => Math.min(p + 1, displayTotalPages))}
-                                            disabled={currentPage === displayTotalPages}
-                                        >
-                                            ถัดไป
-                                        </Button>
+                                    return (
+                                        <div key={clinic.id} className="w-full md:flex-shrink-0 md:w-80 md:min-w-[320px]">
+                                            <Card className="flex flex-col h-auto md:h-[500px]">
+                                                <div className="p-4 flex flex-col h-full">
+                                                    {/* Clinic Header */}
+                                                    <div className="flex items-center justify-between mb-3 pb-3 border-b flex-shrink-0">
+                                                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                                                            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center text-white font-semibold shadow-lg">
+                                                                {clinic.name.charAt(0)}
+                                                            </div>
+                                                            <div className="flex-1 min-w-0">
+                                                                <h3 className="font-semibold text-gray-900 truncate">{clinic.name}</h3>
+                                                                <p className="text-xs text-gray-500">{tasksCount} งาน</p>
+                                                            </div>
+                                                        </div>
+                                                        <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getBadgeClass(tasksCount)}`}>
+                                                            {tasksCount}
+                                                        </span>
+                                                    </div>
+
+                                                    {/* Tasks Content */}
+                                                    <div className="flex-1 md:overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent hover:scrollbar-thumb-gray-400">
+                                                        {isManager ? (
+                                                            (() => {
+                                                                const tasksByAssignee = usersWithNames.reduce((acc, user) => {
+                                                                    const userName = `${user.firstname} ${user.lastname}`.trim();
+                                                                    const userClinicTasks = clinicTasks.filter(
+                                                                        (task) => isUserAssignee(task, user.id, userName)
+                                                                    );
+                                                                    if (userClinicTasks.length > 0) {
+                                                                        acc[user.id] = {
+                                                                            user,
+                                                                            tasks: userClinicTasks,
+                                                                        };
+                                                                    }
+                                                                    return acc;
+                                                                }, {} as Record<string, { user: User; tasks: Task[] }>);
+
+                                                                return Object.keys(tasksByAssignee).length === 0 ? (
+                                                                    <div className="text-center py-8 text-gray-400 text-sm">
+                                                                        ไม่มีงาน
+                                                                    </div>
+                                                                ) : (
+                                                                    <Accordion type="multiple" className="w-full">
+                                                                        {Object.entries(tasksByAssignee).map(([userId, { user, tasks: userTasks }]) => (
+                                                                            <AccordionItem key={userId} value={userId}>
+                                                                                <AccordionTrigger className="text-xs font-medium text-gray-700 hover:no-underline">
+                                                                                    <div className="flex items-center gap-2">
+                                                                                        <div className="w-6 h-6 rounded-full bg-purple-100 flex items-center justify-center">
+                                                                                            <span className="text-xs font-semibold text-purple-700">
+                                                                                                {user.name.charAt(0)}
+                                                                                            </span>
+                                                                                        </div>
+                                                                                        {user.name} ({userTasks.length})
+                                                                                    </div>
+                                                                                </AccordionTrigger>
+                                                                                <AccordionContent className="space-y-2 mt-2">
+                                                                                    {userTasks.map((task) => (
+                                                                                        <TaskCard
+                                                                                            key={task.id}
+                                                                                            task={transformTaskForUI(task)}
+                                                                                            onClick={() => handleTaskClick(task)}
+                                                                                        />
+                                                                                    ))}
+                                                                                </AccordionContent>
+                                                                            </AccordionItem>
+                                                                        ))}
+                                                                    </Accordion>
+                                                                );
+                                                            })()
+                                                        ) : (
+                                                            clinicTasks.length === 0 ? (
+                                                                <div className="text-center py-8 text-gray-400 text-sm">
+                                                                    ไม่มีงาน
+                                                                </div>
+                                                            ) : (
+                                                                <div className="space-y-2">
+                                                                    {clinicTasks.map((task) => (
+                                                                        <TaskCard
+                                                                            key={task.id}
+                                                                            task={transformTaskForUI(task)}
+                                                                            onClick={() => handleTaskClick(task)}
+                                                                        />
+                                                                    ))}
+                                                                </div>
+                                                            )
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </Card>
+                                        </div>
+                                    );
+                                })}
+
+                                {/* Empty State */}
+                                {displayClinics.length === 0 && (
+                                    <div className="w-full flex items-center justify-center h-64 text-gray-500">
+                                        <p>ไม่พบคลินิก</p>
                                     </div>
                                 )}
                             </div>
+
+                            {/* Pagination */}
+                            {viewMode === 'clinic' && selectedClinic === 'all' && displayTotalPages > 1 && (
+                                <div className="flex justify-center items-center gap-2 pt-4">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+                                        disabled={currentPage === 1}
+                                    >
+                                        ก่อนหน้า
+                                    </Button>
+                                    <span className="text-sm text-gray-600">
+                                        หน้า {currentPage} จาก {displayTotalPages}
+                                    </span>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => setCurrentPage((p) => Math.min(p + 1, displayTotalPages))}
+                                        disabled={currentPage === displayTotalPages}
+                                    >
+                                        ถัดไป
+                                    </Button>
+                                </div>
+                            )}
                         </div>
                     )}
                 </DragDropContext>

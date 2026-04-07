@@ -1,77 +1,14 @@
-// import type { UserMeResponse, User } from '@/types/user';
-// import { useAuthStore } from '@/stores/authStore';
-
-// const API_BASE = import.meta.env.VITE_API_BASE_URL || '/synergy/api';
-
-// // Helper: Get access token from localStorage (จาก authStore persist)
-// // const getAccessToken = (): string | null => {
-// //     try {
-// //         const authStorage = localStorage.getItem('auth-storage');
-// //         if (authStorage) {
-// //             const parsed = JSON.parse(authStorage);
-// //             return parsed.state?.tokens?.accessToken || null;
-// //         }
-// //         return null;
-// //     } catch {
-// //         return null;
-// //     }
-// // };
-
-// const getAccessToken = (): string | null => {
-//     return useAuthStore.getState().tokens?.accessToken || null;
-//   };
-
-
-// interface ApiResponse<T> {
-//     success: boolean;
-//     data?: T;
-//     error?: string;
-// }
-
-// // GET /synergy/api/user/me - Fetch current user
-// export const getMe = async (): Promise<ApiResponse<UserMeResponse['data']>> => {
-//     const token = getAccessToken();
-//     if (!token) {
-//         return { success: false, error: 'No access token available' };
-//     }
-
-//     const response = await fetch(`${API_BASE}/user/me`, {
-//         method: 'GET',
-//         headers: {
-//             'Content-Type': 'application/json',
-//             Authorization: `Bearer ${token}`,
-//         },
-//     });
-
-//     if (!response.ok) {
-//         return { success: false, error: `Failed to fetch user: ${response.statusText}` };
-//     }
-
-//     const data: UserMeResponse = await response.json();
-//     if (data.status !== 'success') {
-//         return { success: false, error: 'Failed to fetch user' };
-//     }
-
-//     // Parse dates จาก ISO strings
-//     const user: User = {
-//         ...data.data.user,
-//         birthDate: new Date(data.data.user.birthDate),
-//         contractDateStart: new Date(data.data.user.contractDateStart),
-//         contractDateEnd: new Date(data.data.user.contractDateEnd),
-//         employeeDateStart: new Date(data.data.user.employeeDateStart),
-//         lastLogin: new Date(data.data.user.lastLogin),
-//     };
-
-//     return { success: true, data: { user } };
-// };
-
-// export const userService = {
-//     getMe,
-// };
-
-// src/services/userService.ts
-
-import type { User, UserSummary } from '@/types/user';
+import type {
+  User,
+  UserListItem,
+  UserSummary,
+  UserListParams,
+  // UserMeResponse,
+  UserListResponse,
+  // UserDetailResponse,
+  CreateUserDTO,
+  UpdateUserDTO,
+} from '@/types/user';
 import { useAuthStore } from '@/stores/authStore';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/synergy/api';
@@ -81,104 +18,85 @@ const getAccessToken = (): string | null => {
   return useAuthStore.getState().tokens?.accessToken || null;
 };
 
+// Generic API response
 interface ApiResponse<T> {
   success: boolean;
   data?: T;
   error?: string;
 }
 
-interface UserMeResponse {
-  status: 'success';
-  data: {
-    user: User;
-  };
-}
-
-// Raw user from API (with _id)
-interface RawUser {
-  _id: string;
-  username: string;
-  profile?: string;
-  firstname: string;
-  lastname: string;
-  nickname: string;
-  position?: string;
-  role: 'admin' | 'manager' | 'employee';
-  isActive?: boolean;
-}
-
-interface UserListResponse {
-  status: 'success';
-  results: number;
-  pagination?: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
-  data: {
-    users: RawUser[];
-  };
-}
-
-// GET /synergy/api/user/me - Fetch current user
-export const getMe = async (): Promise<ApiResponse<{ user: User }>> => {
+// Generic fetch helper
+const apiFetch = async <T>(
+  url: string,
+  options: RequestInit = {}
+): Promise<ApiResponse<T>> => {
   const token = getAccessToken();
   if (!token) {
     return { success: false, error: 'No access token available' };
   }
 
   try {
-    const response = await fetch(`${API_BASE}/user/me`, {
-      method: 'GET',
+    const response = await fetch(url, {
+      ...options,
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`,
+        ...options.headers,
       },
     });
 
     if (!response.ok) {
-      return { success: false, error: `Failed to fetch user: ${response.statusText}` };
+      const errorData = await response.json().catch(() => null);
+      return {
+        success: false,
+        error: errorData?.message || `Request failed: ${response.statusText}`,
+      };
     }
 
-    const data: UserMeResponse = await response.json();
-    if (data.status !== 'success') {
-      return { success: false, error: 'Failed to fetch user' };
+    // Handle successful response (any 2xx: 200, 201, 204, etc.)
+    const text = await response.text();
+    if (!text) {
+      return { success: true };
     }
-
-    // Parse dates from ISO strings
-    const user: User = {
-      ...data.data.user,
-      birthDate: new Date(data.data.user.birthDate),
-      contractDateStart: new Date(data.data.user.contractDateStart),
-      contractDateEnd: new Date(data.data.user.contractDateEnd),
-      employeeDateStart: new Date(data.data.user.employeeDateStart),
-      lastLogin: new Date(data.data.user.lastLogin),
-    };
-
-    return { success: true, data: { user } };
+    const data = JSON.parse(text);
+    if (data.status === 'success') {
+      return { success: true, data: data.data || data };
+    }
+    return { success: false, error: data.message || 'Request failed' };
   } catch (error) {
     return { success: false, error: 'Network error' };
   }
 };
 
-// GET /synergy/api/user - Fetch all users (for employee selection)
-export const getAllUsers = async (params?: { 
-  isActive?: boolean; 
-  role?: string;
-  search?: string;
-  page?: number;
-  limit?: number;
-}): Promise<ApiResponse<{ users: UserSummary[] }>> => {
+// GET /user/me - Fetch current user
+export const getMe = async (): Promise<ApiResponse<{ user: User }>> => {
+  return apiFetch<{ user: User }>(`${API_BASE}/user/me`);
+};
+
+// GET /user - Fetch all users (admin/manager)
+export const getUsers = async (
+  params?: UserListParams
+): Promise<
+  ApiResponse<{
+    users: UserListItem[];
+    pagination?: {
+      page: number;
+      limit: number;
+      total: number;
+      totalPages: number;
+    };
+  }>
+> => {
   const token = getAccessToken();
   if (!token) {
     return { success: false, error: 'No access token available' };
   }
 
   const queryParams = new URLSearchParams();
-  if (params?.isActive !== undefined) queryParams.append('isActive', params.isActive.toString());
-  if (params?.role) queryParams.append('role', params.role);
   if (params?.search) queryParams.append('search', params.search);
+  if (params?.role) queryParams.append('role', params.role);
+  if (params?.positionId) queryParams.append('positionId', params.positionId);
+  if (params?.isActive !== undefined) queryParams.append('isActive', params.isActive.toString());
   if (params?.page) queryParams.append('page', params.page.toString());
   if (params?.limit) queryParams.append('limit', params.limit.toString());
 
@@ -195,7 +113,11 @@ export const getAllUsers = async (params?: {
     });
 
     if (!response.ok) {
-      return { success: false, error: `Failed to fetch users: ${response.statusText}` };
+      const errorData = await response.json().catch(() => null);
+      return {
+        success: false,
+        error: errorData?.message || `Failed to fetch users: ${response.statusText}`,
+      };
     }
 
     const data: UserListResponse = await response.json();
@@ -203,28 +125,93 @@ export const getAllUsers = async (params?: {
       return { success: false, error: 'Failed to fetch users' };
     }
 
-    // Convert to UserSummary (map _id to id)
-    const users: UserSummary[] = data.data.users.map(user => ({
-      id: user._id,
-      name: `${user.firstname} ${user.lastname}`.trim() || user.nickname || user.username,
-      role: user.role,
-      position: user.position || '',
-      isActive: user.isActive ?? true,
-    }));
-
-    return { success: true, data: { users } };
+    return {
+      success: true,
+      data: {
+        users: data.data.users,
+        pagination: data.pagination,
+      },
+    };
   } catch (error) {
     return { success: false, error: 'Network error' };
   }
 };
 
-// GET /synergy/api/user/active - Fetch active users only
-export const getActiveUsers = async (): Promise<ApiResponse<{ users: UserSummary[] }>> => {
-  return getAllUsers({ isActive: true, limit: 20 });
+// GET /user/:id - Fetch single user
+export const getUserById = async (
+  id: string
+): Promise<ApiResponse<{ user: User }>> => {
+  return apiFetch<{ user: User }>(`${API_BASE}/user/${id}`);
+};
+
+// POST /user - Create new user (admin/manager)
+export const createUser = async (
+  dto: CreateUserDTO
+): Promise<ApiResponse<{ user: User }>> => {
+  return apiFetch<{ user: User }>(`${API_BASE}/user`, {
+    method: 'POST',
+    body: JSON.stringify(dto),
+  });
+};
+
+// PUT /user/:id - Update user
+export const updateUser = async (
+  id: string,
+  dto: UpdateUserDTO
+): Promise<ApiResponse<{ user: User }>> => {
+  return apiFetch<{ user: User }>(`${API_BASE}/user/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(dto),
+  });
+};
+
+// DELETE /user/:id - Soft delete user (admin only)
+export const deleteUser = async (
+  id: string
+): Promise<ApiResponse<void>> => {
+  return apiFetch<void>(`${API_BASE}/user/${id}`, {
+    method: 'DELETE',
+  });
+};
+
+// Convert UserListItem[] to UserSummary[] for dropdowns
+export const getAllUserSummaries = async (
+  params?: UserListParams
+): Promise<ApiResponse<{ users: UserSummary[] }>> => {
+  const result = await getUsers({
+    ...params,
+    limit: params?.limit || 50,
+  });
+
+  if (!result.success || !result.data) {
+    return { success: false, error: result.error };
+  }
+
+  const users: UserSummary[] = result.data.users.map((user) => ({
+    id: user.id,
+    name: `${user.firstname} ${user.lastname}`.trim() || user.nickname || user.username,
+    role: user.role,
+    position: user.position?.name || '',
+    isActive: user.isActive,
+  }));
+
+  return { success: true, data: { users } };
+};
+
+// Get active users only
+export const getActiveUsers = async (): Promise<
+  ApiResponse<{ users: UserSummary[] }>
+> => {
+  return getAllUserSummaries({ isActive: true });
 };
 
 export const userService = {
   getMe,
-  getAllUsers,
+  getUsers,
+  getUserById,
+  createUser,
+  updateUser,
+  deleteUser,
+  getAllUserSummaries,
   getActiveUsers,
 };

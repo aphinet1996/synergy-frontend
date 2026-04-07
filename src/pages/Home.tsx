@@ -30,10 +30,6 @@ import {
 import { format, isToday, isTomorrow, isPast, differenceInDays } from 'date-fns';
 import { th } from 'date-fns/locale';
 
-// ============================================
-// Helper Functions
-// ============================================
-
 // หา process ที่ user ถูก assign
 function findUserProcess(task: Task, userId: string, userName: string): Process | null {
   if (!task.process || task.process.length === 0) return null;
@@ -141,9 +137,6 @@ function formatDueDate(date: Date) {
   return format(d, 'dd MMM', { locale: th });
 }
 
-// ============================================
-// Stat Card Component
-// ============================================
 interface StatCardProps {
   title: string;
   value: string | number;
@@ -181,9 +174,6 @@ function StatCard({ title, value, subtitle, icon, color, trend }: StatCardProps)
   );
 }
 
-// ============================================
-// Task Item Component
-// ============================================
 interface TaskItemProps {
   task: Task;
   displayStatus?: TaskStatus;
@@ -203,7 +193,7 @@ function TaskItem({ task, displayStatus, showClinic = true }: TaskItemProps) {
             {task.priority === 'urgent' ? 'ด่วนมาก' : task.priority === 'high' ? 'ด่วน' : task.priority === 'medium' ? 'ปานกลาง' : 'ต่ำ'}
           </Badge>
         </div>
-        
+
         <div className="flex items-center justify-between text-xs text-gray-500">
           <div className="flex items-center gap-3">
             {showClinic && task.clinic?.name && (
@@ -226,23 +216,20 @@ function TaskItem({ task, displayStatus, showClinic = true }: TaskItemProps) {
   );
 }
 
-// ============================================
-// Employee Dashboard
-// ============================================
-function EmployeeDashboard({ 
-  tasks, 
-  currentUser, 
+function EmployeeDashboard({
+  tasks,
+  currentUser,
   userName,
-  loading 
-}: { 
-  tasks: Task[]; 
+  loading
+}: {
+  tasks: Task[];
   currentUser: User;
   userName: string;
   loading: boolean;
 }) {
   // Filter tasks assigned to employee
   const myTasks = useMemo(() => {
-    return tasks.filter(task => 
+    return tasks.filter(task =>
       isUserAssignedToTask(task, currentUser.id, userName) ||
       task.createdBy === currentUser.id ||
       task.createdBy === userName
@@ -365,9 +352,9 @@ function EmployeeDashboard({
             {urgentTasks.length > 0 ? (
               <div className="space-y-3">
                 {urgentTasks.map(task => (
-                  <TaskItem 
-                    key={task.id} 
-                    task={task} 
+                  <TaskItem
+                    key={task.id}
+                    task={task}
                     displayStatus={getDisplayStatus(task, currentUser.id, userName)}
                   />
                 ))}
@@ -394,8 +381,8 @@ function EmployeeDashboard({
             {tasksByStatus.process.length > 0 ? (
               <div className="space-y-3">
                 {tasksByStatus.process.slice(0, 5).map(task => (
-                  <TaskItem 
-                    key={task.id} 
+                  <TaskItem
+                    key={task.id}
                     task={task}
                     displayStatus="process"
                   />
@@ -422,14 +409,11 @@ function EmployeeDashboard({
   );
 }
 
-// ============================================
-// Manager Dashboard
-// ============================================
-function ManagerDashboard({ 
-  tasks, 
+function ManagerDashboard({
+  tasks,
   currentUser,
-  loading 
-}: { 
+  loading
+}: {
   tasks: Task[];
   users: User[];
   clinics: any[];
@@ -475,11 +459,11 @@ function ManagerDashboard({
   // Tasks by clinic
   const tasksByClinic = useMemo(() => {
     const groups: Record<string, { name: string; count: number; done: number }> = {};
-    
+
     tasks.forEach(task => {
       const clinicId = task.clinic?.id || 'unknown';
       const clinicName = task.clinic?.name?.th || task.clinic?.name?.en || 'ไม่ระบุ';
-      
+
       if (!groups[clinicId]) {
         groups[clinicId] = { name: clinicName, count: 0, done: 0 };
       }
@@ -572,8 +556,8 @@ function ManagerDashboard({
               const percent = totalTasks > 0 ? Math.round((count / totalTasks) * 100) : 0;
               return (
                 <div key={status} className="text-center">
-                  <div className={`h-2 rounded-full ${getStatusColor(status).replace('text-', 'bg-').split(' ')[0]}`} 
-                       style={{ opacity: 0.3 + (percent / 100) * 0.7 }} />
+                  <div className={`h-2 rounded-full ${getStatusColor(status).replace('text-', 'bg-').split(' ')[0]}`}
+                    style={{ opacity: 0.3 + (percent / 100) * 0.7 }} />
                   <p className="text-xs mt-1 text-gray-600">{getStatusLabel(status)}</p>
                   <p className="text-sm font-semibold">{count}</p>
                 </div>
@@ -668,16 +652,13 @@ function ManagerDashboard({
   );
 }
 
-// ============================================
-// Admin Dashboard
-// ============================================
-function AdminDashboard({ 
-  tasks, 
+function AdminDashboard({
+  tasks,
   users,
   clinics,
   currentUser,
-  loading 
-}: { 
+  loading
+}: {
   tasks: Task[];
   users: User[];
   clinics: any[];
@@ -742,14 +723,6 @@ function AdminDashboard({
           <p className="text-gray-500 mt-1">
             ภาพรวมระบบ Synergy
           </p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" asChild>
-            <Link to="/admin">
-              <Settings className="h-4 w-4 mr-2" />
-              Admin Panel
-            </Link>
-          </Button>
         </div>
       </div>
 
@@ -919,9 +892,6 @@ function AdminDashboard({
   );
 }
 
-// ============================================
-// Dashboard Skeleton
-// ============================================
 function DashboardSkeleton() {
   return (
     <div className="space-y-6">
@@ -944,22 +914,19 @@ function DashboardSkeleton() {
   );
 }
 
-// ============================================
-// Main Component
-// ============================================
 export default function Home() {
   const [isInitialLoad, setIsInitialLoad] = React.useState(true);
-  
-  // ✅ ใช้ currentUser จาก taskStore ที่มี fetchCurrentUser อยู่แล้ว
-  const { 
-    tasks, 
-    users, 
-    clinics, 
+
+  // ใช้ currentUser จาก taskStore ที่มี fetchCurrentUser อยู่แล้ว
+  const {
+    tasks,
+    users,
+    clinics,
     currentUser: taskStoreUser,
-    loading, 
-    fetchAll 
+    loading,
+    fetchAll
   } = useTaskStore();
-  
+
   // Fallback: ใช้ user จาก userStore ถ้า taskStore ยังไม่มี
   const { user: userStoreUser } = useUserStore();
 
@@ -971,30 +938,30 @@ export default function Home() {
     loadData();
   }, []);
 
-  // ✅ ใช้ currentUser จาก taskStore ก่อน, fallback ไป userStore
+  // ใช้ currentUser จาก taskStore ก่อน, fallback ไป userStore
   const currentUser = (taskStoreUser || userStoreUser) as User | null;
-  
-  const userName = currentUser 
+
+  const userName = currentUser
     ? `${currentUser.firstname || ''} ${currentUser.lastname || ''}`.trim() || currentUser.name || ''
     : '';
 
   // Determine role
   const role = currentUser?.role || 'employee';
 
-  // ✅ แสดง skeleton ระหว่าง initial loading
+  // แสดง skeleton ระหว่าง initial loading
   if (isInitialLoad) {
     return <DashboardSkeleton />;
   }
-  
-  // ✅ ถ้าโหลดเสร็จแล้วแต่ไม่มี user แสดงข้อความ
+
+  // ถ้าโหลดเสร็จแล้วแต่ไม่มี user แสดงข้อความ
   if (!currentUser) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
           <AlertCircle className="h-12 w-12 mx-auto mb-4 text-gray-400" />
           <p className="text-gray-500">ไม่สามารถโหลดข้อมูลผู้ใช้ได้</p>
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             className="mt-4"
             onClick={() => window.location.reload()}
           >

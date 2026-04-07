@@ -1,12 +1,13 @@
-import type { 
-  ClinicListResponse, 
-  ClinicDetailResponse, 
-  CreateClinicRequest, 
-  UpdateClinicRequest, 
-  Clinic, 
+import type {
+  ClinicListResponse,
+  ClinicDetailResponse,
+  CreateClinicRequest,
+  UpdateClinicRequest,
+  Clinic,
   ClinicListParams,
-  TimelineItem 
+  TimelineItem
 } from '@/types/clinic';
+import type { UserSummary } from '@/types/user';
 import { useAuthStore } from '@/stores/authStore';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/synergy/api';
@@ -29,7 +30,7 @@ const formatDateToAPI = (date: Date | string): string => {
 // Helper: Safe date parsing
 const safeParseDate = (date: any): Date => {
   if (!date) return new Date();
-  
+
   try {
     const parsed = new Date(date);
     // Check if valid date
@@ -45,28 +46,72 @@ const safeParseDate = (date: any): Date => {
 // Helper: Get user display name from various user object formats
 const getUserName = (user: any): string => {
   if (!user) return 'Unknown';
-  
+
   if (typeof user === 'string') return user;
-  
+
   if (user.name && typeof user.name === 'string') return user.name;
-  
+
   if (user.firstname || user.lastname) {
     return `${user.firstname || ''} ${user.lastname || ''}`.trim() || user.nickname || 'Unknown';
   }
-  
+
   if (user.nickname) return user.nickname;
-  
+
   return 'Unknown';
 };
 
 // Helper: Transform user object to standard format
 const transformUser = (user: any): { id: string; name: string } | undefined => {
   if (!user) return undefined;
-  
+
   const id = user.id || user._id || '';
   const name = getUserName(user);
-  
+
   return { id, name };
+};
+
+// NEW: Transform assignedTo array from API to UserSummary[]
+const transformAssignedTo = (assignedTo: any[]): UserSummary[] => {
+  if (!assignedTo || !Array.isArray(assignedTo)) return [];
+
+  return assignedTo.map((user: any) => {
+    // Handle different API response formats
+    const id = user.id || user._id || '';
+
+    // Build name from various possible fields
+    let name = '';
+    if (user.name && typeof user.name === 'string') {
+      name = user.name;
+    } else if (user.firstname || user.lastname) {
+      name = `${user.firstname || ''} ${user.lastname || ''}`.trim();
+    } else if (user.nickname) {
+      name = user.nickname;
+    } else if (user.username) {
+      name = user.username;
+    } else {
+      name = 'Unknown';
+    }
+
+    return {
+      id,
+      name,
+      role: user.role || 'employee',
+      position: user.position || '',
+      isActive: user.isActive ?? true,
+    };
+  });
+};
+
+// NEW: Transform full clinic object
+const transformClinic = (rawClinic: any): Clinic => {
+  return {
+    ...rawClinic,
+    id: rawClinic.id || rawClinic._id,
+    contractDateStart: safeParseDate(rawClinic.contractDateStart),
+    contractDateEnd: safeParseDate(rawClinic.contractDateEnd),
+    clinicName: rawClinic.name?.th || '',
+    assignedTo: transformAssignedTo(rawClinic.assignedTo),
+  };
 };
 
 interface ApiResponse<T> {
@@ -76,9 +121,9 @@ interface ApiResponse<T> {
 }
 
 // GET /synergy/api/clinic - List with optional params
-export const getClinics = async (params?: ClinicListParams): Promise<ApiResponse<{ 
-  clinics: Clinic[]; 
-  pagination: ClinicListResponse['pagination'] 
+export const getClinics = async (params?: ClinicListParams): Promise<ApiResponse<{
+  clinics: Clinic[];
+  pagination: ClinicListResponse['pagination']
 }>> => {
   const token = getAccessToken();
   if (!token) {
@@ -114,13 +159,8 @@ export const getClinics = async (params?: ClinicListParams): Promise<ApiResponse
       return { success: false, error: 'Failed to fetch clinics' };
     }
 
-    // Parse dates and add computed clinicName
-    const clinics = data.data.clinics.map((clinic) => ({
-      ...clinic,
-      contractDateStart: safeParseDate(clinic.contractDateStart),
-      contractDateEnd: safeParseDate(clinic.contractDateEnd),
-      clinicName: clinic.name.th,
-    }));
+    // FIXED: Transform clinics including assignedTo
+    const clinics = data.data.clinics.map(transformClinic);
 
     return { success: true, data: { clinics, pagination: data.pagination } };
   } catch (error) {
@@ -155,13 +195,8 @@ export const getClinicById = async (id: string): Promise<ApiResponse<{ clinic: C
       return { success: false, error: 'Failed to fetch clinic' };
     }
 
-    // Parse dates and add computed clinicName
-    const clinic = {
-      ...data.data.clinic,
-      contractDateStart: safeParseDate(data.data.clinic.contractDateStart),
-      contractDateEnd: safeParseDate(data.data.clinic.contractDateEnd),
-      clinicName: data.data.clinic.name.th,
-    };
+    // FIXED: Transform clinic including assignedTo
+    const clinic = transformClinic(data.data.clinic);
 
     return { success: true, data: { clinic } };
   } catch (error) {
@@ -203,7 +238,7 @@ export const createClinic = async (payload: CreateClinicRequest): Promise<ApiRes
       return { success: false, error: data.message || 'Failed to create clinic' };
     }
 
-    return { success: true, data: { clinic: data.data.clinic } };
+    return { success: true, data: { clinic: transformClinic(data.data.clinic) } };
   } catch (error) {
     console.error('Create clinic error:', error);
     return { success: false, error: 'Network error' };
@@ -243,7 +278,7 @@ export const updateClinic = async (id: string, payload: UpdateClinicRequest): Pr
       return { success: false, error: data.message || 'Failed to update clinic' };
     }
 
-    return { success: true, data: { clinic: data.data.clinic } };
+    return { success: true, data: { clinic: transformClinic(data.data.clinic) } };
   } catch (error) {
     console.error('Update clinic error:', error);
     return { success: false, error: 'Network error' };
@@ -273,46 +308,26 @@ export const deleteClinic = async (id: string): Promise<ApiResponse<void>> => {
 
     return { success: true };
   } catch (error) {
+    console.error('Delete clinic error:', error);
     return { success: false, error: 'Network error' };
   }
 };
 
-// ==================== TIMELINE API ====================
-
-// Timeline response types
 interface TimelineResponse {
   status: 'success';
   data: {
     timeline: TimelineItem[];
     totalWeeks: number;
-    contractDateStart: string;
-    contractDateEnd: string;
+    contractDateStart: Date;
+    contractDateEnd: Date;
   };
 }
 
 interface TimelineUpdateResponse {
   status: 'success';
-  message: string;
   data: {
     timeline: TimelineItem[];
-    totalWeeks?: number;
   };
-}
-
-// Timeline item input for create/update
-export interface TimelineItemInput {
-  serviceType: 'setup' | 'coperateIdentity' | 'website' | 'socialMedia' | 'training';
-  serviceName: string;
-  serviceAmount: string;
-  weekStart: number;
-  weekEnd: number;
-}
-
-export interface UpdateTimelineItemInput {
-  weekStart?: number;
-  weekEnd?: number;
-  serviceName?: string;
-  serviceAmount?: string;
 }
 
 // GET /synergy/api/clinic/:id/timeline
@@ -361,10 +376,10 @@ export const getTimeline = async (clinicId: string): Promise<ApiResponse<{
   }
 };
 
-// PUT /synergy/api/clinic/:id/timeline - Update entire timeline
+// PUT /synergy/api/clinic/:id/timeline - Replace entire timeline
 export const updateTimeline = async (
   clinicId: string,
-  timeline: TimelineItemInput[]
+  timeline: TimelineItem[]
 ): Promise<ApiResponse<{ timeline: TimelineItem[] }>> => {
   const token = getAccessToken();
   if (!token) {
@@ -398,10 +413,10 @@ export const updateTimeline = async (
   }
 };
 
-// POST /synergy/api/clinic/:id/timeline/item - Add single item
+// POST /synergy/api/clinic/:id/timeline/items - Add single item
 export const addTimelineItem = async (
   clinicId: string,
-  item: TimelineItemInput
+  item: Omit<TimelineItem, '_id'>
 ): Promise<ApiResponse<{ timeline: TimelineItem[] }>> => {
   const token = getAccessToken();
   if (!token) {
@@ -409,7 +424,7 @@ export const addTimelineItem = async (
   }
 
   try {
-    const response = await fetch(`${API_BASE}/clinic/${clinicId}/timeline/item`, {
+    const response = await fetch(`${API_BASE}/clinic/${clinicId}/timeline/items`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -435,11 +450,11 @@ export const addTimelineItem = async (
   }
 };
 
-// PATCH /synergy/api/clinic/:id/timeline/item/:itemId - Update single item
+// PUT /synergy/api/clinic/:id/timeline/items/:itemId - Update single item
 export const updateTimelineItem = async (
   clinicId: string,
   itemId: string,
-  updates: UpdateTimelineItemInput
+  updates: { weekStart?: number; weekEnd?: number; serviceName?: string }
 ): Promise<ApiResponse<{ timeline: TimelineItem[] }>> => {
   const token = getAccessToken();
   if (!token) {
@@ -447,8 +462,8 @@ export const updateTimelineItem = async (
   }
 
   try {
-    const response = await fetch(`${API_BASE}/clinic/${clinicId}/timeline/item/${itemId}`, {
-      method: 'PATCH',
+    const response = await fetch(`${API_BASE}/clinic/${clinicId}/timeline/items/${itemId}`, {
+      method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`,
@@ -473,7 +488,7 @@ export const updateTimelineItem = async (
   }
 };
 
-// DELETE /synergy/api/clinic/:id/timeline/item/:itemId - Delete single item
+// DELETE /synergy/api/clinic/:id/timeline/items/:itemId - Delete single item
 export const deleteTimelineItem = async (
   clinicId: string,
   itemId: string
@@ -484,7 +499,7 @@ export const deleteTimelineItem = async (
   }
 
   try {
-    const response = await fetch(`${API_BASE}/clinic/${clinicId}/timeline/item/${itemId}`, {
+    const response = await fetch(`${API_BASE}/clinic/${clinicId}/timeline/items/${itemId}`, {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
@@ -508,8 +523,6 @@ export const deleteTimelineItem = async (
     return { success: false, error: 'Network error' };
   }
 };
-
-// ==================== DOCUMENT API ====================
 
 // Document types - flexible to handle various API response formats
 export interface ClinicDocument {
@@ -635,7 +648,7 @@ export const getDocument = async (clinicId: string, docId: string): Promise<ApiR
 
 // POST /synergy/api/clinic/:id/documents - Create new document
 export const createDocument = async (
-  clinicId: string, 
+  clinicId: string,
   data: { title: string; content?: string }
 ): Promise<ApiResponse<{ document: ClinicDocument }>> => {
   const token = getAccessToken();
@@ -674,7 +687,7 @@ export const createDocument = async (
 
 // PUT /synergy/api/clinic/:id/documents/:docId - Update document
 export const updateDocument = async (
-  clinicId: string, 
+  clinicId: string,
   docId: string,
   data: { title?: string; content?: string }
 ): Promise<ApiResponse<{ document: ClinicDocument }>> => {

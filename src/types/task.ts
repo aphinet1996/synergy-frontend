@@ -11,7 +11,7 @@ export interface User {
   firstname?: string;
   lastname?: string;
   nickname?: string;
-  position?: string;
+  position?: { id: string; name: string };
 }
 
 export interface Comment {
@@ -49,7 +49,7 @@ export interface Workload {
   shooting: WorkloadSection[];
 }
 
-// ✅ Clinic DTO ตรงกับ backend response
+// Clinic DTO ตรงกับ backend response
 export interface TaskClinic {
   id: string;
   name: {
@@ -58,7 +58,7 @@ export interface TaskClinic {
   };
 }
 
-// ✅ Assignee DTO ตรงกับ backend response
+// Assignee DTO ตรงกับ backend response
 export interface TaskAssignee {
   id: string;
   firstname: string;
@@ -66,7 +66,7 @@ export interface TaskAssignee {
   nickname: string;
 }
 
-// ✅ Clinic สำหรับ dropdown (จาก GET /clinic/)
+// Clinic สำหรับ dropdown (จาก GET /clinic/)
 export interface Clinic {
   id: string;
   name: {
@@ -131,7 +131,7 @@ export interface CreateTaskRequest {
   tag: string[];
   startDate: string; // "MM/DD/YYYY"
   dueDate: string; // "MM/DD/YYYY"
-  clinicId: string; // ✅ ObjectId
+  clinicId: string; // ObjectId
   process: Array<{
     name: string;
     assignee: string[];  // User ObjectIds

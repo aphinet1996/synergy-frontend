@@ -45,6 +45,7 @@ import {
     Stethoscope,
     Check,
     Search,
+    Camera,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { th } from 'date-fns/locale';
@@ -52,11 +53,10 @@ import { cn } from '@/lib/utils';
 import type { Clinic, CreateClinicRequest, UpdateClinicRequest } from '@/types/clinic';
 import type { UserSummary } from '@/types/user';
 import { useClinicStore } from '@/stores/clinicStore';
-// import { useAuthStore } from '@/stores/authStore';
 import { useProcedureStore } from '@/stores/procedureStore';
 import { userService } from '@/services/userService';
 import { uploadService } from '@/services/uploadService';
-import { toast } from 'sonner'; // ถ้าใช้ sonner สำหรับ notification
+import { toast } from 'sonner';
 
 interface ClinicDialogProps {
     open: boolean;
@@ -68,9 +68,7 @@ interface ClinicDialogProps {
 
 const STEPS = ['ข้อมูลคลินิก', 'ผู้รับผิดชอบ', 'ขอบเขตงาน'];
 
-// Zod Schema
 const schema = z.object({
-    // Step 1
     logo: z.any().optional(),
     nameTh: z.string().min(1, 'กรุณากรอกชื่อคลินิก (ไทย)'),
     nameEn: z.string().min(1, 'กรุณากรอกชื่อคลินิก (English)'),
@@ -80,8 +78,6 @@ const schema = z.object({
     startDate: z.date({ message: 'กรุณาเลือกวันที่เริ่มสัญญา' }),
     endDate: z.date({ message: 'กรุณาเลือกวันที่สิ้นสุดสัญญา' }),
     note: z.string().optional(),
-
-    // Step 3 - Services
     setupRequirement: z.boolean(),
     setupSocial: z.boolean(),
     setupAds: z.boolean(),
@@ -109,17 +105,14 @@ export function ClinicDialog({ open, onOpenChange, onSuccess, mode = 'create', i
     const [logoPreview, setLogoPreview] = useState<string | null>(null);
     const [isValidating, setIsValidating] = useState(false);
 
-    // Users state
     const [users, setUsers] = useState<UserSummary[]>([]);
     const [usersLoading, setUsersLoading] = useState(false);
     const [userSearch, setUserSearch] = useState('');
 
-    // Selection state - ใช้ state แยกแทน form
     const [selectedEmployees, setSelectedEmployees] = useState<string[]>([]);
     const [selectedProcedures, setSelectedProcedures] = useState<string[]>([]);
     const [employeeError, setEmployeeError] = useState<string | null>(null);
 
-    // Procedures state
     const [procedureSearch, setProcedureSearch] = useState('');
 
     const [logoFile, setLogoFile] = useState<File | null>(null);
@@ -127,10 +120,8 @@ export function ClinicDialog({ open, onOpenChange, onSuccess, mode = 'create', i
     const [uploadedLogoUrl, setUploadedLogoUrl] = useState<string | null>(null);
 
     const { createClinic, updateClinic } = useClinicStore();
-    // const { user } = useAuthStore();
     const { activeProcedures, fetchActiveProcedures } = useProcedureStore();
 
-    // Form setup
     const form = useForm<ClinicFormData>({
         resolver: zodResolver(schema),
         defaultValues: {
@@ -161,13 +152,9 @@ export function ClinicDialog({ open, onOpenChange, onSuccess, mode = 'create', i
 
     const { register, formState: { errors }, reset, watch, setValue, trigger } = form;
 
-    // Load users and procedures when dialog opens
     useEffect(() => {
         if (open) {
-            // Load active procedures
             fetchActiveProcedures();
-
-            // Load users
             setUsersLoading(true);
             userService.getActiveUsers()
                 .then(response => {
@@ -179,12 +166,10 @@ export function ClinicDialog({ open, onOpenChange, onSuccess, mode = 'create', i
         }
     }, [open, fetchActiveProcedures]);
 
-    // Reset form when mode or initialData changes
     useEffect(() => {
         if (!open) return;
 
         if (mode === 'edit' && initialData) {
-            // Extract procedure IDs
             const procedureIds = Array.isArray(initialData.procedures)
                 ? initialData.procedures.map(p => typeof p === 'string' ? p : p.id)
                 : [];
@@ -216,14 +201,10 @@ export function ClinicDialog({ open, onOpenChange, onSuccess, mode = 'create', i
             setSelectedEmployees(initialData.assignedTo?.map(u => u.id) || []);
             setSelectedProcedures(procedureIds);
 
-            // if (initialData.clinicProfile) {
-            //     setLogoPreview(initialData.clinicProfile);
-            // }
             if (initialData.clinicProfile) {
                 setLogoPreview(initialData.clinicProfile);
                 setUploadedLogoUrl(initialData.clinicProfile);
             }
-
             setLogoFile(null);
         } else {
             reset({
@@ -254,33 +235,18 @@ export function ClinicDialog({ open, onOpenChange, onSuccess, mode = 'create', i
             setLogoPreview(null);
             setLogoFile(null);
             setUploadedLogoUrl(null);
-            setLogoPreview(null);
         }
         setEmployeeError(null);
         setCurrentStep(1);
     }, [mode, initialData, reset, open]);
 
-    // Toggle employee selection
     const toggleEmployee = (id: string) => {
-        setSelectedEmployees(prev => {
-            if (prev.includes(id)) {
-                return prev.filter(e => e !== id);
-            } else {
-                return [...prev, id];
-            }
-        });
+        setSelectedEmployees(prev => prev.includes(id) ? prev.filter(e => e !== id) : [...prev, id]);
         setEmployeeError(null);
     };
 
-    // Toggle procedure selection
     const toggleProcedure = (id: string) => {
-        setSelectedProcedures(prev => {
-            if (prev.includes(id)) {
-                return prev.filter(p => p !== id);
-            } else {
-                return [...prev, id];
-            }
-        });
+        setSelectedProcedures(prev => prev.includes(id) ? prev.filter(p => p !== id) : [...prev, id]);
     };
 
     const startDate = watch('startDate');
@@ -289,64 +255,37 @@ export function ClinicDialog({ open, onOpenChange, onSuccess, mode = 'create', i
     const contractType = watch('contractType');
     const clinicLevel = watch('clinicLevel');
 
-    // Filter users by search
     const filteredUsers = users.filter(u =>
         u.name.toLowerCase().includes(userSearch.toLowerCase()) ||
         u.position?.toLowerCase().includes(userSearch.toLowerCase())
     );
 
-    // Filter procedures by search
     const filteredProcedures = activeProcedures.filter(p =>
         p.name.toLowerCase().includes(procedureSearch.toLowerCase())
     );
-
-    // const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    //     const file = e.target.files?.[0];
-    //     if (file) {
-    //         setValue('logo', file);
-    //         const reader = new FileReader();
-    //         reader.onloadend = () => {
-    //             setLogoPreview(reader.result as string);
-    //         };
-    //         reader.readAsDataURL(file);
-    //     }
-    // };
 
     const handleLogoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
-        // Validate file type
         const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
         if (!allowedTypes.includes(file.type)) {
             toast.error('รองรับเฉพาะไฟล์ JPEG, PNG, WebP, GIF');
             return;
         }
 
-        // Validate file size (max 5MB)
         if (file.size > 5 * 1024 * 1024) {
             toast.error('ขนาดไฟล์ต้องไม่เกิน 5MB');
             return;
         }
 
-        // เก็บ file ไว้ก่อน
         setLogoFile(file);
-
-        // สร้าง preview
         const reader = new FileReader();
-        reader.onloadend = () => {
-            setLogoPreview(reader.result as string);
-        };
+        reader.onloadend = () => setLogoPreview(reader.result as string);
         reader.readAsDataURL(file);
     };
 
-    // const handleRemoveLogo = () => {
-    //     setValue('logo', null);
-    //     setLogoPreview(null);
-    // };
-
     const handleRemoveLogo = async () => {
-        // ถ้ามี URL ที่ upload แล้ว ให้ลบออกจาก server
         if (uploadedLogoUrl) {
             try {
                 await uploadService.deleteFileByUrl(uploadedLogoUrl);
@@ -354,20 +293,18 @@ export function ClinicDialog({ open, onOpenChange, onSuccess, mode = 'create', i
                 console.warn('Failed to delete uploaded file:', error);
             }
         }
-
         setLogoFile(null);
         setLogoPreview(null);
         setUploadedLogoUrl(null);
         setValue('logo', null);
     };
 
-
     const handleClose = () => {
         reset();
         setCurrentStep(1);
         setLogoPreview(null);
-        setLogoFile(null);           // ✅ เพิ่ม
-        setUploadedLogoUrl(null);    // ✅ เพิ่ม
+        setLogoFile(null);
+        setUploadedLogoUrl(null);
         setUserSearch('');
         setProcedureSearch('');
         setSelectedEmployees([]);
@@ -381,7 +318,6 @@ export function ClinicDialog({ open, onOpenChange, onSuccess, mode = 'create', i
             const fieldsToValidate: (keyof ClinicFormData)[] = ['nameTh', 'nameEn', 'status', 'contractType', 'clinicLevel', 'startDate', 'endDate'];
             return await trigger(fieldsToValidate);
         }
-
         if (step === 2) {
             if (selectedEmployees.length === 0) {
                 setEmployeeError('กรุณาเลือกผู้รับผิดชอบอย่างน้อย 1 คน');
@@ -390,12 +326,10 @@ export function ClinicDialog({ open, onOpenChange, onSuccess, mode = 'create', i
             setEmployeeError(null);
             return true;
         }
-
         if (step === 3) {
             const fieldsToValidate: (keyof ClinicFormData)[] = ['ciDesign', 'landingPage', 'salePage', 'graphicDesign', 'videoProduction', 'salesTraining', 'mediaTraining', 'adsTraining', 'websiteTraining'];
             return await trigger(fieldsToValidate);
         }
-
         return true;
     };
 
@@ -403,27 +337,20 @@ export function ClinicDialog({ open, onOpenChange, onSuccess, mode = 'create', i
         setIsValidating(true);
         const isValid = await validateStep(currentStep);
         setIsValidating(false);
-
-        if (isValid && currentStep < 3) {
-            setCurrentStep(currentStep + 1);
-        }
+        if (isValid && currentStep < 3) setCurrentStep(currentStep + 1);
     };
 
     const handleBack = () => {
-        if (currentStep > 1) {
-            setCurrentStep(currentStep - 1);
-        }
+        if (currentStep > 1) setCurrentStep(currentStep - 1);
     };
 
     const handleSave = async () => {
-        // Validate step 2 (employees)
         if (selectedEmployees.length === 0) {
             setEmployeeError('กรุณาเลือกผู้รับผิดชอบอย่างน้อย 1 คน');
             setCurrentStep(2);
             return;
         }
 
-        // Validate form data
         const isValid = await trigger();
         if (!isValid) return;
 
@@ -431,18 +358,12 @@ export function ClinicDialog({ open, onOpenChange, onSuccess, mode = 'create', i
 
         try {
             const data = form.getValues();
-
-            // ============================================
-            // ✅ UPLOAD LOGO ก่อน (ถ้ามี)
-            // ============================================
             let clinicProfileUrl = uploadedLogoUrl || initialData?.clinicProfile || '';
 
             if (logoFile) {
                 setIsUploading(true);
                 toast.info('กำลังอัปโหลดรูปภาพ...');
-
                 const uploadResult = await uploadService.uploadImage(logoFile, 'clinics');
-
                 if (uploadResult.success && uploadResult.data) {
                     clinicProfileUrl = uploadResult.data.url;
                     setUploadedLogoUrl(clinicProfileUrl);
@@ -451,7 +372,7 @@ export function ClinicDialog({ open, onOpenChange, onSuccess, mode = 'create', i
                     toast.error(uploadResult.error || 'อัปโหลดรูปภาพล้มเหลว');
                     setIsLoading(false);
                     setIsUploading(false);
-                    return; // หยุดถ้า upload ไม่สำเร็จ
+                    return;
                 }
                 setIsUploading(false);
             }
@@ -480,7 +401,6 @@ export function ClinicDialog({ open, onOpenChange, onSuccess, mode = 'create', i
             };
 
             if (mode === 'edit' && initialData) {
-                // ✅ ลบรูปเก่าถ้ามีการเปลี่ยนรูปใหม่
                 if (logoFile && initialData.clinicProfile && initialData.clinicProfile !== clinicProfileUrl) {
                     try {
                         await uploadService.deleteFileByUrl(initialData.clinicProfile);
@@ -490,11 +410,8 @@ export function ClinicDialog({ open, onOpenChange, onSuccess, mode = 'create', i
                 }
 
                 const updateRequest: UpdateClinicRequest = {
-                    name: {
-                        th: data.nameTh,
-                        en: data.nameEn,
-                    },
-                    clinicProfile: clinicProfileUrl, // ✅ ใช้ URL จาก upload
+                    name: { th: data.nameTh, en: data.nameEn },
+                    clinicProfile: clinicProfileUrl,
                     clinicLevel: data.clinicLevel,
                     contractType: data.contractType,
                     contractDateStart: format(data.startDate, 'MM/dd/yyyy'),
@@ -516,11 +433,8 @@ export function ClinicDialog({ open, onOpenChange, onSuccess, mode = 'create', i
                 }
             } else {
                 const createRequest: CreateClinicRequest = {
-                    name: {
-                        th: data.nameTh,
-                        en: data.nameEn,
-                    },
-                    clinicProfile: clinicProfileUrl, // ✅ ใช้ URL จาก upload
+                    name: { th: data.nameTh, en: data.nameEn },
+                    clinicProfile: clinicProfileUrl,
                     clinicLevel: data.clinicLevel,
                     contractType: data.contractType,
                     contractDateStart: format(data.startDate, 'MM/dd/yyyy'),
@@ -550,7 +464,6 @@ export function ClinicDialog({ open, onOpenChange, onSuccess, mode = 'create', i
         }
     };
 
-
     const renderCheckbox = (name: keyof ClinicFormData, label: string) => {
         const value = watch(name);
         return (
@@ -569,138 +482,166 @@ export function ClinicDialog({ open, onOpenChange, onSuccess, mode = 'create', i
 
     return (
         <Dialog open={open} onOpenChange={handleClose}>
-            <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                    <DialogTitle className="text-2xl font-bold">
-                        {mode === 'edit' ? 'แก้ไขข้อมูลคลินิก' : 'เพิ่มคลินิกใหม่'}
-                    </DialogTitle>
-                    <DialogDescription>
-                        {mode === 'edit'
-                            ? 'แก้ไขข้อมูลและการตั้งค่าของคลินิก'
-                            : 'กรอกข้อมูลเพื่อเพิ่มคลินิกใหม่ในระบบ'}
-                    </DialogDescription>
-                </DialogHeader>
+            <DialogContent className="sm:max-w-[900px] h-[90vh] flex flex-col p-0 gap-0">
+                {/* Fixed Header */}
+                <div className="flex-shrink-0 px-6 pt-6 pb-4 border-b">
+                    <DialogHeader>
+                        <DialogTitle className="text-2xl font-bold flex items-center gap-2">
+                            <Building2 className="h-6 w-6 text-purple-600" />
+                            {mode === 'edit' ? 'แก้ไขข้อมูลคลินิก' : 'เพิ่มคลินิกใหม่'}
+                        </DialogTitle>
+                        <DialogDescription>
+                            {mode === 'edit'
+                                ? 'แก้ไขข้อมูลและการตั้งค่าของคลินิก'
+                                : 'กรอกข้อมูลเพื่อเพิ่มคลินิกใหม่ในระบบ'}
+                        </DialogDescription>
+                    </DialogHeader>
+                </div>
 
-                <div>
-                    {/* Step Indicator */}
-                    <div className="mb-6">
-                        <StepIndicator steps={STEPS} currentStep={currentStep} totalSteps={STEPS.length} />
-                    </div>
+                {/* Fixed Step Indicator */}
+                <div className="flex-shrink-0 px-6 py-4 border-b">
+                    <StepIndicator steps={STEPS} currentStep={currentStep} totalSteps={STEPS.length} />
+                </div>
 
+                {/* Scrollable Content */}
+                <div className="flex-1 overflow-y-auto px-6 py-6">
                     {/* Step 1: ข้อมูลคลินิก */}
                     {currentStep === 1 && (
                         <div className="space-y-6">
-                            {/* Logo Upload */}
-                            <div className="space-y-2">
-                                <Label>โลโก้คลินิก</Label>
-                                <div className="flex items-center gap-4">
+                            {/* Logo + ชื่อคลินิก + สถานะ */}
+                            <div className="flex gap-6">
+                                {/* Logo - ด้านซ้าย (สี่เหลี่ยมจตุรัส) */}
+                                <div className="flex-shrink-0">
+                                    {/* <Label className="text-sm font-medium mb-2 block">โลโก้คลินิก</Label> */}
                                     {logoPreview ? (
-                                        <div className="relative">
+                                        <div className="relative group">
                                             <img
                                                 src={logoPreview}
                                                 alt="Logo preview"
-                                                className="w-24 h-24 object-cover rounded-lg border"
+                                                className="w-36 h-36 object-cover rounded-xl border-2 border-gray-200"
                                             />
                                             <button
                                                 type="button"
                                                 onClick={handleRemoveLogo}
-                                                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                                                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1.5 shadow-lg hover:bg-red-600 transition-colors"
                                             >
                                                 <X className="h-4 w-4" />
                                             </button>
+                                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl flex items-center justify-center">
+                                                <label className="cursor-pointer p-3 bg-white/20 rounded-full backdrop-blur-sm">
+                                                    <Camera className="h-6 w-6 text-white" />
+                                                    <input type="file" accept="image/*" onChange={handleLogoChange} className="hidden" />
+                                                </label>
+                                            </div>
                                         </div>
                                     ) : (
-                                        <label className="w-24 h-24 flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-gray-400 transition-colors">
-                                            <Upload className="h-8 w-8 text-gray-400" />
-                                            <span className="text-xs text-gray-500 mt-1">อัพโหลด</span>
-                                            <input
-                                                type="file"
-                                                accept="image/*"
-                                                onChange={handleLogoChange}
-                                                className="hidden"
-                                            />
+                                        <label className="w-36 h-36 flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-xl cursor-pointer hover:border-purple-400 hover:bg-purple-50 transition-all">
+                                            <Upload className="h-10 w-10 text-gray-400 mb-2" />
+                                            <span className="text-sm text-gray-500">อัพโหลดรูป</span>
+                                            <span className="text-xs text-gray-400 mt-1">PNG, JPG</span>
+                                            <input type="file" accept="image/*" onChange={handleLogoChange} className="hidden" />
                                         </label>
                                     )}
                                 </div>
+
+                                {/* ข้อมูลหลัก - ด้านขวา */}
+                                <div className="flex-1 space-y-4">
+                                    {/* ชื่อคลินิก */}
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-3">
+                                            <Label htmlFor="nameTh">ชื่อคลินิก (ไทย) <span className="text-red-500">*</span></Label>
+                                            <Input
+                                                id="nameTh"
+                                                {...register('nameTh')}
+                                                placeholder="กรอกชื่อคลินิกภาษาไทย"
+                                                className="h-10"
+                                            />
+                                            <FormError error={errors.nameTh} />
+                                        </div>
+                                        <div className="space-y-3">
+                                            <Label htmlFor="nameEn">ชื่อคลินิก (English) <span className="text-red-500">*</span></Label>
+                                            <Input
+                                                id="nameEn"
+                                                {...register('nameEn')}
+                                                placeholder="Enter clinic name in English"
+                                                className="h-10"
+                                            />
+                                            <FormError error={errors.nameEn} />
+                                        </div>
+                                    </div>
+
+                                    {/* สถานะ, ประเภทสัญญา, ระดับ */}
+                                    <div className="grid grid-cols-3 gap-4">
+                                        <div className="space-y-3">
+                                            <Label>สถานะ <span className="text-red-500">*</span></Label>
+                                            <Select value={status} onValueChange={(value: 'active' | 'inactive' | 'pending') => setValue('status', value)}>
+                                                <SelectTrigger className="h-10 w-full">
+                                                    <SelectValue placeholder="เลือกสถานะ" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="active">
+                                                        <span className="flex items-center gap-2">
+                                                            <span className="w-2 h-2 rounded-full bg-green-500" />
+                                                            ใช้งาน
+                                                        </span>
+                                                    </SelectItem>
+                                                    <SelectItem value="inactive">
+                                                        <span className="flex items-center gap-2">
+                                                            <span className="w-2 h-2 rounded-full bg-gray-400" />
+                                                            ไม่ใช้งาน
+                                                        </span>
+                                                    </SelectItem>
+                                                    <SelectItem value="pending">
+                                                        <span className="flex items-center gap-2">
+                                                            <span className="w-2 h-2 rounded-full bg-yellow-500" />
+                                                            รอดำเนินการ
+                                                        </span>
+                                                    </SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                            <FormError error={errors.status} />
+                                        </div>
+
+                                        <div className="space-y-3">
+                                            <Label>ประเภทสัญญา <span className="text-red-500">*</span></Label>
+                                            <Select value={contractType} onValueChange={(value: 'yearly' | 'monthly' | 'project') => setValue('contractType', value)}>
+                                                <SelectTrigger className="h-10 w-full">
+                                                    <SelectValue placeholder="เลือกประเภท" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="yearly">รายปี</SelectItem>
+                                                    <SelectItem value="monthly">รายเดือน</SelectItem>
+                                                    <SelectItem value="project">โปรเจกต์</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                            <FormError error={errors.contractType} />
+                                        </div>
+
+                                        <div className="space-y-3">
+                                            <Label>ระดับคลินิก <span className="text-red-500">*</span></Label>
+                                            <Select value={clinicLevel} onValueChange={(value: 'easy' | 'soso' | 'hellonearth') => setValue('clinicLevel', value)}>
+                                                <SelectTrigger className="h-10 w-full">
+                                                    <SelectValue placeholder="เลือกระดับ" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="easy">Easy</SelectItem>
+                                                    <SelectItem value="soso">So so</SelectItem>
+                                                    <SelectItem value="hellonearth">Hell on earth</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                            <FormError error={errors.clinicLevel} />
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
 
-                            {/* Clinic Names */}
+                            {/* วันที่สัญญา */}
                             <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="nameTh">ชื่อคลินิก (ไทย) *</Label>
-                                    <Input
-                                        id="nameTh"
-                                        {...register('nameTh')}
-                                        placeholder="กรอกชื่อคลินิกภาษาไทย"
-                                    />
-                                    <FormError error={errors.nameTh} />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="nameEn">ชื่อคลินิก (English) *</Label>
-                                    <Input
-                                        id="nameEn"
-                                        {...register('nameEn')}
-                                        placeholder="Enter clinic name in English"
-                                    />
-                                    <FormError error={errors.nameEn} />
-                                </div>
-                            </div>
-
-                            {/* Status, Type, Level */}
-                            <div className="grid grid-cols-3 gap-4">
-                                <div className="space-y-2">
-                                    <Label>สถานะ *</Label>
-                                    <Select value={status} onValueChange={(value: 'active' | 'inactive' | 'pending') => setValue('status', value)}>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="เลือกสถานะ" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="active">ใช้งาน</SelectItem>
-                                            <SelectItem value="inactive">ไม่ใช้งาน</SelectItem>
-                                            <SelectItem value="pending">รอดำเนินการ</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                    <FormError error={errors.status} />
-                                </div>
-
-                                <div className="space-y-2">
-                                    <Label>ประเภทสัญญา *</Label>
-                                    <Select value={contractType} onValueChange={(value: 'yearly' | 'monthly' | 'project') => setValue('contractType', value)}>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="เลือกประเภท" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="yearly">รายปี</SelectItem>
-                                            <SelectItem value="monthly">รายเดือน</SelectItem>
-                                            <SelectItem value="project">โปรเจกต์</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                    <FormError error={errors.contractType} />
-                                </div>
-
-                                <div className="space-y-2">
-                                    <Label>ระดับคลินิก *</Label>
-                                    <Select value={clinicLevel} onValueChange={(value: 'easy' | 'soso' | 'hellonearth') => setValue('clinicLevel', value)}>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="เลือกระดับ" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="easy">Easy</SelectItem>
-                                            <SelectItem value="soso">So so</SelectItem>
-                                            <SelectItem value="hellonearth">Hell on earth</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                    <FormError error={errors.clinicLevel} />
-                                </div>
-                            </div>
-
-                            {/* Contract Dates */}
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label>วันที่เริ่มสัญญา *</Label>
+                                <div className="space-y-1.5">
+                                    <Label>วันที่เริ่มสัญญา <span className="text-red-500">*</span></Label>
                                     <Popover>
                                         <PopoverTrigger asChild>
-                                            <Button variant="outline" className="w-full justify-start text-left font-normal">
+                                            <Button variant="outline" className="w-full h-10 justify-start text-left font-normal">
                                                 <CalendarIcon className="mr-2 h-4 w-4" />
                                                 {startDate ? format(startDate, 'dd MMM yyyy', { locale: th }) : 'เลือกวันที่'}
                                             </Button>
@@ -717,11 +658,11 @@ export function ClinicDialog({ open, onOpenChange, onSuccess, mode = 'create', i
                                     <FormError error={errors.startDate} />
                                 </div>
 
-                                <div className="space-y-2">
-                                    <Label>วันที่สิ้นสุดสัญญา *</Label>
+                                <div className="space-y-1.5">
+                                    <Label>วันที่สิ้นสุดสัญญา <span className="text-red-500">*</span></Label>
                                     <Popover>
                                         <PopoverTrigger asChild>
-                                            <Button variant="outline" className="w-full justify-start text-left font-normal">
+                                            <Button variant="outline" className="w-full h-10 justify-start text-left font-normal">
                                                 <CalendarIcon className="mr-2 h-4 w-4" />
                                                 {endDate ? format(endDate, 'dd MMM yyyy', { locale: th }) : 'เลือกวันที่'}
                                             </Button>
@@ -740,36 +681,34 @@ export function ClinicDialog({ open, onOpenChange, onSuccess, mode = 'create', i
                                 </div>
                             </div>
 
-                            {/* Note */}
-                            <div className="space-y-2">
+                            {/* หมายเหตุ */}
+                            <div className="space-y-1.5">
                                 <Label htmlFor="note">หมายเหตุ</Label>
                                 <textarea
                                     id="note"
                                     {...register('note')}
-                                    className="w-full min-h-[80px] px-3 py-2 border rounded-md"
+                                    className="w-full min-h-[80px] px-3 py-2 border rounded-md text-sm"
                                     placeholder="หมายเหตุเพิ่มเติม (ถ้ามี)"
                                 />
                             </div>
 
-                            {/* Procedures Section */}
+                            {/* หัตถการ */}
                             <div className="space-y-3">
                                 <div className="flex items-center gap-2">
                                     <Stethoscope className="h-5 w-5 text-blue-600" />
                                     <Label className="text-base font-medium">หัตถการที่ให้บริการ</Label>
                                 </div>
 
-                                {/* Search procedures */}
                                 <div className="relative">
                                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                                     <Input
                                         placeholder="ค้นหาหัตถการ..."
                                         value={procedureSearch}
                                         onChange={(e) => setProcedureSearch(e.target.value)}
-                                        className="pl-10"
+                                        className="pl-10 h-10"
                                     />
                                 </div>
 
-                                {/* Selected procedures badges */}
                                 {selectedProcedures.length > 0 && (
                                     <div className="flex flex-wrap gap-2">
                                         {selectedProcedures.map(id => {
@@ -779,23 +718,17 @@ export function ClinicDialog({ open, onOpenChange, onSuccess, mode = 'create', i
                                                 <Badge key={id} variant="secondary" className="gap-1 bg-blue-100 text-blue-700">
                                                     <Stethoscope className="h-3 w-3" />
                                                     {proc.name}
-                                                    <X
-                                                        className="h-3 w-3 cursor-pointer hover:text-blue-900"
-                                                        onClick={() => toggleProcedure(id)}
-                                                    />
+                                                    <X className="h-3 w-3 cursor-pointer hover:text-blue-900" onClick={() => toggleProcedure(id)} />
                                                 </Badge>
                                             );
                                         })}
                                     </div>
                                 )}
 
-                                {/* Procedures grid */}
                                 <div className="grid grid-cols-2 md:grid-cols-3 gap-2 max-h-[200px] overflow-y-auto border rounded-lg p-3">
                                     {filteredProcedures.length === 0 ? (
                                         <div className="col-span-full text-center py-4 text-gray-500 text-sm">
-                                            {activeProcedures.length === 0
-                                                ? 'ยังไม่มีหัตถการในระบบ'
-                                                : 'ไม่พบหัตถการที่ค้นหา'}
+                                            {activeProcedures.length === 0 ? 'ยังไม่มีหัตถการในระบบ' : 'ไม่พบหัตถการที่ค้นหา'}
                                         </div>
                                     ) : (
                                         filteredProcedures.map(proc => (
@@ -811,28 +744,16 @@ export function ClinicDialog({ open, onOpenChange, onSuccess, mode = 'create', i
                                             >
                                                 <div className="flex items-center justify-between">
                                                     <div className="flex items-center gap-2">
-                                                        <Stethoscope className={cn(
-                                                            "h-4 w-4",
-                                                            selectedProcedures.includes(proc.id) ? "text-blue-600" : "text-gray-400"
-                                                        )} />
-                                                        <span className={cn(
-                                                            "font-medium",
-                                                            selectedProcedures.includes(proc.id) ? "text-blue-700" : "text-gray-700"
-                                                        )}>
-                                                            {proc.name}
-                                                        </span>
+                                                        <Stethoscope className={cn("h-4 w-4", selectedProcedures.includes(proc.id) ? "text-blue-600" : "text-gray-400")} />
+                                                        <span className={cn("font-medium", selectedProcedures.includes(proc.id) ? "text-blue-700" : "text-gray-700")}>{proc.name}</span>
                                                     </div>
-                                                    {selectedProcedures.includes(proc.id) && (
-                                                        <Check className="h-4 w-4 text-blue-600" />
-                                                    )}
+                                                    {selectedProcedures.includes(proc.id) && <Check className="h-4 w-4 text-blue-600" />}
                                                 </div>
                                             </div>
                                         ))
                                     )}
                                 </div>
-                                <p className="text-xs text-gray-500">
-                                    เลือกแล้ว {selectedProcedures.length} รายการ
-                                </p>
+                                <p className="text-xs text-gray-500">เลือกแล้ว {selectedProcedures.length} รายการ</p>
                             </div>
                         </div>
                     )}
@@ -846,7 +767,6 @@ export function ClinicDialog({ open, onOpenChange, onSuccess, mode = 'create', i
                                 </p>
                             </div>
 
-                            {/* Search */}
                             <div className="relative">
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                                 <Input
@@ -857,65 +777,51 @@ export function ClinicDialog({ open, onOpenChange, onSuccess, mode = 'create', i
                                 />
                             </div>
 
-                            {/* Selected employees */}
                             {selectedEmployees.length > 0 && (
                                 <div className="flex flex-wrap gap-2">
                                     {selectedEmployees.map(id => {
                                         const emp = users.find(u => u.id === id);
                                         if (!emp) return null;
                                         return (
-                                            <Badge key={id} variant="secondary" className="gap-1">
+                                            <Badge key={id} variant="secondary" className="gap-1 bg-purple-100 text-purple-700">
                                                 {emp.name}
-                                                <X
-                                                    className="h-3 w-3 cursor-pointer"
-                                                    onClick={() => toggleEmployee(id)}
-                                                />
+                                                <X className="h-3 w-3 cursor-pointer hover:text-purple-900" onClick={() => toggleEmployee(id)} />
                                             </Badge>
                                         );
                                     })}
                                 </div>
                             )}
 
-                            {/* Users list */}
                             {usersLoading ? (
                                 <div className="flex items-center justify-center py-8">
                                     <Loader2 className="h-6 w-6 animate-spin text-purple-600" />
-                                    <span className="ml-2">กำลังโหลด...</span>
+                                    <span className="ml-2 text-gray-600">กำลังโหลด...</span>
                                 </div>
                             ) : (
-                                <div className="border rounded-lg max-h-[300px] overflow-y-auto">
+                                <div className="border rounded-lg overflow-hidden">
                                     <table className="w-full">
-                                        <thead className="bg-gray-50 sticky top-0">
+                                        <thead className="bg-gray-50">
                                             <tr>
-                                                <th className="px-4 py-3 text-left text-sm font-medium text-gray-600 w-12"></th>
-                                                <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">ชื่อ</th>
-                                                <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">ตำแหน่ง</th>
-                                                <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">บทบาท</th>
+                                                <th className="w-12 px-4 py-3"></th>
+                                                <th className="text-left px-4 py-3 text-sm font-medium text-gray-700">ชื่อ</th>
+                                                <th className="text-left px-4 py-3 text-sm font-medium text-gray-700">ตำแหน่ง</th>
+                                                <th className="text-left px-4 py-3 text-sm font-medium text-gray-700">บทบาท</th>
                                             </tr>
                                         </thead>
-                                        <tbody>
+                                        <tbody className="divide-y">
                                             {filteredUsers.length === 0 ? (
                                                 <tr>
-                                                    <td colSpan={4} className="px-4 py-8 text-center text-gray-500">
-                                                        ไม่พบพนักงาน
-                                                    </td>
+                                                    <td colSpan={4} className="text-center py-8 text-gray-500">ไม่พบพนักงาน</td>
                                                 </tr>
                                             ) : (
                                                 filteredUsers.map(u => (
                                                     <tr
                                                         key={u.id}
-                                                        className={cn(
-                                                            "cursor-pointer hover:bg-gray-50 border-b",
-                                                            selectedEmployees.includes(u.id) && "bg-purple-50"
-                                                        )}
+                                                        className={cn("cursor-pointer transition-colors", selectedEmployees.includes(u.id) ? "bg-purple-50" : "hover:bg-gray-50")}
                                                         onClick={() => toggleEmployee(u.id)}
                                                     >
                                                         <td className="px-4 py-3">
-                                                            <Checkbox
-                                                                checked={selectedEmployees.includes(u.id)}
-                                                                onCheckedChange={() => toggleEmployee(u.id)}
-                                                                onClick={(e) => e.stopPropagation()}
-                                                            />
+                                                            <Checkbox checked={selectedEmployees.includes(u.id)} />
                                                         </td>
                                                         <td className="px-4 py-3 font-medium">{u.name}</td>
                                                         <td className="px-4 py-3 text-gray-600">{u.position || '-'}</td>
@@ -938,8 +844,7 @@ export function ClinicDialog({ open, onOpenChange, onSuccess, mode = 'create', i
 
                     {/* Step 3: ขอบเขตงาน */}
                     {currentStep === 3 && (
-                        <div className="space-y-4">
-                            {/* Setup */}
+                        <div className="grid grid-cols-2 gap-4">
                             <Card>
                                 <CardHeader>
                                     <CardTitle className="text-lg flex items-center gap-2">
@@ -954,31 +859,22 @@ export function ClinicDialog({ open, onOpenChange, onSuccess, mode = 'create', i
                                 </CardContent>
                             </Card>
 
-                            {/* CI */}
                             <Card>
                                 <CardHeader>
                                     <CardTitle className="text-lg flex items-center gap-2">
-                                        <Building2 className="h-5 w-5 text-purple-600" />
+                                        <ImageIcon className="h-5 w-5 text-purple-600" />
                                         Corporate Identity
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent>
                                     <div className="flex items-center gap-4">
                                         <Label htmlFor="ciDesign" className="w-32">CI Design</Label>
-                                        <Input
-                                            id="ciDesign"
-                                            type="number"
-                                            min="0"
-                                            {...register('ciDesign', { valueAsNumber: true })}
-                                            className="w-32"
-                                            placeholder="0"
-                                        />
-                                        <span className="text-sm text-gray-500">บาท</span>
+                                        <Input id="ciDesign" type="number" min="0" {...register('ciDesign', { valueAsNumber: true })} className="w-32" placeholder="0" />
+                                        <span className="text-sm text-gray-500">ชิ้น</span>
                                     </div>
                                 </CardContent>
                             </Card>
 
-                            {/* Website */}
                             <Card>
                                 <CardHeader>
                                     <CardTitle className="text-lg flex items-center gap-2">
@@ -989,32 +885,17 @@ export function ClinicDialog({ open, onOpenChange, onSuccess, mode = 'create', i
                                 <CardContent className="space-y-3">
                                     <div className="flex items-center gap-4">
                                         <Label htmlFor="landingPage" className="w-32">Landing Page</Label>
-                                        <Input
-                                            id="landingPage"
-                                            type="number"
-                                            min="0"
-                                            {...register('landingPage', { valueAsNumber: true })}
-                                            className="w-32"
-                                            placeholder="0"
-                                        />
+                                        <Input id="landingPage" type="number" min="0" {...register('landingPage', { valueAsNumber: true })} className="w-32" placeholder="0" />
                                         <span className="text-sm text-gray-500">หน้า</span>
                                     </div>
                                     <div className="flex items-center gap-4">
                                         <Label htmlFor="salePage" className="w-32">Sale Page</Label>
-                                        <Input
-                                            id="salePage"
-                                            type="number"
-                                            min="0"
-                                            {...register('salePage', { valueAsNumber: true })}
-                                            className="w-32"
-                                            placeholder="0"
-                                        />
+                                        <Input id="salePage" type="number" min="0" {...register('salePage', { valueAsNumber: true })} className="w-32" placeholder="0" />
                                         <span className="text-sm text-gray-500">หน้า</span>
                                     </div>
                                 </CardContent>
                             </Card>
 
-                            {/* Social Media */}
                             <Card>
                                 <CardHeader>
                                     <CardTitle className="text-lg flex items-center gap-2">
@@ -1025,32 +906,17 @@ export function ClinicDialog({ open, onOpenChange, onSuccess, mode = 'create', i
                                 <CardContent className="space-y-3">
                                     <div className="flex items-center gap-4">
                                         <Label htmlFor="graphicDesign" className="w-32">จัดทำ Graphic</Label>
-                                        <Input
-                                            id="graphicDesign"
-                                            type="number"
-                                            min="0"
-                                            {...register('graphicDesign', { valueAsNumber: true })}
-                                            className="w-32"
-                                            placeholder="0"
-                                        />
+                                        <Input id="graphicDesign" type="number" min="0" {...register('graphicDesign', { valueAsNumber: true })} className="w-32" placeholder="0" />
                                         <span className="text-sm text-gray-500">ชิ้น</span>
                                     </div>
                                     <div className="flex items-center gap-4">
                                         <Label htmlFor="videoProduction" className="w-32">จัดทำ Video</Label>
-                                        <Input
-                                            id="videoProduction"
-                                            type="number"
-                                            min="0"
-                                            {...register('videoProduction', { valueAsNumber: true })}
-                                            className="w-32"
-                                            placeholder="0"
-                                        />
+                                        <Input id="videoProduction" type="number" min="0" {...register('videoProduction', { valueAsNumber: true })} className="w-32" placeholder="0" />
                                         <span className="text-sm text-gray-500">ชิ้น</span>
                                     </div>
                                 </CardContent>
                             </Card>
 
-                            {/* Training */}
                             <Card>
                                 <CardHeader>
                                     <CardTitle className="text-lg flex items-center gap-2">
@@ -1061,56 +927,27 @@ export function ClinicDialog({ open, onOpenChange, onSuccess, mode = 'create', i
                                 <CardContent className="space-y-3">
                                     <div className="flex items-center gap-4">
                                         <Label htmlFor="salesTraining" className="w-40">Sales Training</Label>
-                                        <Input
-                                            id="salesTraining"
-                                            type="number"
-                                            min="0"
-                                            {...register('salesTraining', { valueAsNumber: true })}
-                                            className="w-32"
-                                            placeholder="0"
-                                        />
+                                        <Input id="salesTraining" type="number" min="0" {...register('salesTraining', { valueAsNumber: true })} className="w-32" placeholder="0" />
                                         <span className="text-sm text-gray-500">ครั้ง</span>
                                     </div>
                                     <div className="flex items-center gap-4">
                                         <Label htmlFor="mediaTraining" className="w-40">Media Training</Label>
-                                        <Input
-                                            id="mediaTraining"
-                                            type="number"
-                                            min="0"
-                                            {...register('mediaTraining', { valueAsNumber: true })}
-                                            className="w-32"
-                                            placeholder="0"
-                                        />
+                                        <Input id="mediaTraining" type="number" min="0" {...register('mediaTraining', { valueAsNumber: true })} className="w-32" placeholder="0" />
                                         <span className="text-sm text-gray-500">ครั้ง</span>
                                     </div>
                                     <div className="flex items-center gap-4">
                                         <Label htmlFor="adsTraining" className="w-40">Ads Training</Label>
-                                        <Input
-                                            id="adsTraining"
-                                            type="number"
-                                            min="0"
-                                            {...register('adsTraining', { valueAsNumber: true })}
-                                            className="w-32"
-                                            placeholder="0"
-                                        />
+                                        <Input id="adsTraining" type="number" min="0" {...register('adsTraining', { valueAsNumber: true })} className="w-32" placeholder="0" />
                                         <span className="text-sm text-gray-500">ครั้ง</span>
                                     </div>
                                     <div className="flex items-center gap-4">
                                         <Label htmlFor="websiteTraining" className="w-40">Website Training</Label>
-                                        <Input
-                                            id="websiteTraining"
-                                            type="number"
-                                            min="0"
-                                            {...register('websiteTraining', { valueAsNumber: true })}
-                                            className="w-32"
-                                            placeholder="0"
-                                        />
+                                        <Input id="websiteTraining" type="number" min="0" {...register('websiteTraining', { valueAsNumber: true })} className="w-32" placeholder="0" />
                                         <span className="text-sm text-gray-500">ครั้ง</span>
                                     </div>
                                 </CardContent>
                             </Card>
 
-                            {/* HR */}
                             <Card>
                                 <CardHeader>
                                     <CardTitle className="text-lg flex items-center gap-2">
@@ -1126,7 +963,8 @@ export function ClinicDialog({ open, onOpenChange, onSuccess, mode = 'create', i
                     )}
                 </div>
 
-                <DialogFooter className="gap-2 mt-6 pt-4 border-t">
+                {/* Fixed Footer */}
+                <DialogFooter className="flex-shrink-0 px-6 py-4 border-t bg-gray-50 gap-2">
                     <Button type="button" variant="outline" onClick={handleClose}>
                         ยกเลิก
                     </Button>

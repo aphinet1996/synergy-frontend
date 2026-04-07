@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
 
-// ==================== Types ====================
+// Types
 
 export type NotificationType = 'success' | 'info' | 'warning' | 'error';
 export type NotificationModule = 'leave' | 'task' | 'clinic' | 'system' | 'other';
@@ -64,7 +64,7 @@ interface NotificationState {
     setToastEnabled: (enabled: boolean) => void;
 }
 
-// ==================== Helpers ====================
+// Helpers
 
 const generateId = (): string => {
     return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -114,7 +114,7 @@ const showDesktopNotification = (title: string, body: string, icon?: string): vo
     }
 };
 
-// ==================== Initial State ====================
+// Initial State
 
 const initialPendingCounts: PendingCounts = {
     leave: 0,
@@ -123,7 +123,7 @@ const initialPendingCounts: PendingCounts = {
     total: 0,
 };
 
-// ==================== Store ====================
+// Store
 
 export const useNotificationStore = create<NotificationState>()(
     devtools(
@@ -137,7 +137,7 @@ export const useNotificationStore = create<NotificationState>()(
                 toastEnabled: true,
                 unreadCount: 0,
 
-                // ==================== Notification Actions ====================
+                // Notification Actions
 
                 addNotification: (notification) => {
                     const newNotification: AppNotification = {
@@ -233,7 +233,7 @@ export const useNotificationStore = create<NotificationState>()(
                     });
                 },
 
-                // ==================== Pending Count Actions ====================
+                // Pending Count Actions
 
                 setPendingCount: (module, count) => {
                     set((state) => {
@@ -265,7 +265,7 @@ export const useNotificationStore = create<NotificationState>()(
                     });
                 },
 
-                // ==================== Settings Actions ====================
+                // Settings Actions
 
                 setSoundEnabled: (enabled) => set({ soundEnabled: enabled }),
 
@@ -293,7 +293,7 @@ export const useNotificationStore = create<NotificationState>()(
     )
 );
 
-// ==================== Selectors ====================
+// Selectors
 
 export const selectUnreadNotifications = (state: NotificationState) =>
     state.notifications.filter((n) => !n.read);

@@ -1,5 +1,3 @@
-// src/components/admin/UserDialog.tsx
-
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -59,7 +57,7 @@ const roleOptions: { value: UserRole; label: string; description: string }[] = [
   { value: 'admin', label: 'Admin', description: 'สิทธิ์เต็มในการจัดการระบบ' },
   { value: 'manager', label: 'Manager', description: 'จัดการงานและดูข้อมูลทีม' },
   { value: 'employee', label: 'Employee', description: 'ใช้งานทั่วไป' },
-  { value: 'developer', label: 'Developer', description: 'สำหรับนักพัฒนา' },
+  // { value: 'developer', label: 'Developer', description: 'สำหรับนักพัฒนา' },
 ];
 
 export function UserDialog({ open, onOpenChange, editUser, onSuccess }: UserDialogProps) {

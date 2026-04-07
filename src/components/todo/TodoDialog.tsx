@@ -1,5 +1,3 @@
-// src/components/todo/TodoDialog.tsx
-
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -26,10 +24,24 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Check, ChevronsUpDown } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { useTodoStore } from '@/stores/todoStore';
 import { useClinicStore } from '@/stores/clinicStore';
 import type { Todo, TodoPriority } from '@/types/todo';
@@ -166,57 +178,93 @@ export function TodoDialog({ open, onOpenChange, editTodo, onSuccess }: TodoDial
               )}
             />
 
-            {/* Clinic */}
-            <FormField
-              control={form.control}
-              name="clinicId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>คลินิก *</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="เลือกคลินิก" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {clinics.map((clinic) => (
-                        <SelectItem key={clinic.id} value={clinic.id}>
-                          {clinic.name.th || clinic.name.en}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {/* Clinic & Priority - Same Row */}
+            <div className="grid grid-cols-2 gap-4">
+              {/* Clinic - Searchable */}
+              <FormField
+                control={form.control}
+                name="clinicId"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>คลินิก *</FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant="outline"
+                            role="combobox"
+                            className={cn(
+                              'w-full justify-between font-normal',
+                              !field.value && 'text-muted-foreground'
+                            )}
+                          >
+                            {field.value
+                              ? clinics.find((clinic) => clinic.id === field.value)?.name.th ||
+                                clinics.find((clinic) => clinic.id === field.value)?.name.en
+                              : 'เลือกคลินิก'}
+                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="p-0" style={{ width: 'var(--radix-popover-trigger-width)' }} align="start">
+                        <Command>
+                          <CommandInput placeholder="ค้นหาคลินิก..." />
+                          <CommandList>
+                            <CommandEmpty>ไม่พบคลินิก</CommandEmpty>
+                            <CommandGroup>
+                              {clinics.map((clinic) => (
+                                <CommandItem
+                                  key={clinic.id}
+                                  value={clinic.name.th || clinic.name.en}
+                                  onSelect={() => {
+                                    field.onChange(clinic.id);
+                                  }}
+                                >
+                                  <Check
+                                    className={cn(
+                                      'mr-2 h-4 w-4',
+                                      clinic.id === field.value ? 'opacity-100' : 'opacity-0'
+                                    )}
+                                  />
+                                  {clinic.name.th || clinic.name.en}
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-            {/* Priority */}
-            <FormField
-              control={form.control}
-              name="priority"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>ความสำคัญ</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="เลือกความสำคัญ" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {priorityOptions.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+              {/* Priority */}
+              <FormField
+                control={form.control}
+                name="priority"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>ความสำคัญ</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="เลือกความสำคัญ" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {priorityOptions.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
             <DialogFooter>
               <Button

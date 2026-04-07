@@ -6,9 +6,9 @@ import Clinic from '@/pages/clinic/Clinic';
 import ClinicDetail from '@/pages/clinic/ClinicDetail';
 import Task from '@/pages/Task';
 import Todo from '@/pages/Todo';
-// import Profile from '@/pages/Profile';
-// import Leave from '@/pages/Leave';
-// import Notifications from '@/pages/Notification';
+import Profile from '@/pages/Profile';
+import Leave from '@/pages/Leave';
+import Notifications from '@/pages/Notification';
 
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { AdminGuard } from '@/components/admin/AdminGuard';
@@ -19,9 +19,9 @@ import ClinicManagement from '@/pages/admin/ClinicManagement';
 import RolesManagement from '@/pages/admin/RolesManagement';
 import ActivityLogs from '@/pages/admin/ActivityLogs';
 import SystemSettings from '@/pages/admin/SystemSettings';
-// import TeamTodoReport from '@/pages/admin/TeamTodoReport';
-// import LeaveManagement from '@/admin/pages/LeaveManagement';
-// import UserManagement from '@/admin/pages/UserManagement';
+import TeamTodoReport from '@/pages/admin/TeamTodoReport';
+import LeaveManagement from '@/admin/pages/LeaveManagement';
+import UserManagement from '@/admin/pages/UserManagement';
 
 // External Leads pages
 import LeadsManagement from '@/admin/pages/leads/LeadsManagement';
@@ -59,9 +59,9 @@ export const router = createBrowserRouter([
             { path: '/clinic/:id', element: <ClinicDetail /> },
             { path: '/task', element: <Task /> },
             { path: '/todo', element: <Todo /> },
-            // { path: '/profile', element: <Profile /> },
-            // { path: '/leave', element: <Leave /> },
-            // { path: '/notifications', element: <Notifications /> },
+            { path: '/profile', element: <Profile /> },
+            { path: '/leave', element: <Leave /> },
+            { path: '/notifications', element: <Notifications /> },
         ],
     },
 
@@ -75,13 +75,13 @@ export const router = createBrowserRouter([
         ),
         children: [
             { index: true, element: <AdminDashboard /> },
-            // { path: 'users', element: <UserManagement /> },
+            { path: 'users', element: <UserManagement /> },
             { path: 'clinics', element: <ClinicManagement /> },
             { path: 'roles', element: <RolesManagement /> },
             { path: 'logs', element: <ActivityLogs /> },
             { path: 'settings', element: <SystemSettings /> },
-            // { path: 'todo-report', element: <TeamTodoReport /> },
-            // { path: 'leave', element: <LeaveManagement /> },
+            { path: 'todo-report', element: <TeamTodoReport /> },
+            { path: 'leave', element: <LeaveManagement /> },
 
             // External Leads Management
             { path: 'leads/lists', element: <LeadsManagement /> },

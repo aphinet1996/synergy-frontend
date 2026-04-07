@@ -12,7 +12,6 @@ import {
     ChevronsRight,
     ListChecks,
     Hospital,
-    Shield,
     ClipboardList,
     CalendarDays,
 } from 'lucide-react';
@@ -28,7 +27,7 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
     const { user } = useUser();
     const location = useLocation();
     
-    // 🔔 ดึง pending counts จาก store
+    // ดึง pending counts จาก store
     const pendingCounts = useNotificationStore((state) => state.pendingCounts);
 
     if (!authUser) return null;
@@ -40,7 +39,6 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
         return location.pathname.startsWith(path) && path !== '#';
     };
 
-    // Check if user is admin or manager
     const isAdmin = user?.role === 'admin';
     const isManager = user?.role === 'manager';
     const canApprove = isAdmin || isManager;
@@ -152,33 +150,6 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
                             </li>
                         );
                     })}
-
-                    {/* Admin Link - Only for admin users */}
-                    {isAdmin && (
-                        <li className="pt-4 mt-4 border-t">
-                            <Link
-                                to="/admin"
-                                className={cn(
-                                    'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200',
-                                    isCollapsed && 'justify-center px-2',
-                                    location.pathname.startsWith('/admin')
-                                        ? 'bg-red-50 text-red-700'
-                                        : 'text-gray-700 hover:bg-gray-100'
-                                )}
-                                title={isCollapsed ? 'Admin Panel' : undefined}
-                            >
-                                <Shield
-                                    className={cn(
-                                        'h-5 w-5 flex-shrink-0',
-                                        location.pathname.startsWith('/admin')
-                                            ? 'text-red-600'
-                                            : 'text-gray-500'
-                                    )}
-                                />
-                                {!isCollapsed && <span>Admin Panel</span>}
-                            </Link>
-                        </li>
-                    )}
                 </ul>
             </nav>
 

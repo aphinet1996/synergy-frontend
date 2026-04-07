@@ -117,14 +117,14 @@ export function Navbar({ isPublic = false }: NavbarProps) {
                             variant="outline"
                             size="sm"
                             className="hidden md:flex items-center gap-2 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
-                            onClick={() => navigate('/admin')}
+                            onClick={() => navigate('/admin/leads/stats')}
                         >
                             <Shield className="h-4 w-4" />
                             Admin
                         </Button>
                     )}
 
-                    {/* 🔔 Notification Bell - แยก component */}
+                    {/* Notification */}
                     <NotificationBell />
 
                     {/* Profile */}

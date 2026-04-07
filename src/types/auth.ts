@@ -1,7 +1,7 @@
 export interface User {
     id: string;
     username: string;
-    profile: any | null; // null หรือ object
+    profile: any | null;
     firstname: string;
     lastname: string;
     nickname: string;
